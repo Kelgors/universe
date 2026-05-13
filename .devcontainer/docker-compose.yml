@@ -1,0 +1,7 @@
+services:
+  app: 
+    image: mcr.microsoft.com/devcontainers/typescript-node:24
+    volumes:
+      - ..:/workspace
+    working_dir: /workspace
+    command: sleep infinity
