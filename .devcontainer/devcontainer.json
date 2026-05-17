@@ -8,6 +8,7 @@
       "extensions": [
         "biomejs.biome",
         "Prisma.prisma",
+        "cweijan.vscode-postgresql-client2",
         "GitHub.vscode-github-actions",
         "-dbaeumer.vscode-eslint"
       ],
