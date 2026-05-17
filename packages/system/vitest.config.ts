@@ -1,3 +1,4 @@
+import { config } from "dotenv";
 import { defineConfig } from "vitest/config";
 
 export default defineConfig({
@@ -6,5 +7,6 @@ export default defineConfig({
     globals: true,
     include: ["./tests/**/*.test.ts"],
     exclude: ["node_modules", "dist"],
+    env: config({ path: "./tests/.test.env" }).parsed,
   },
 });

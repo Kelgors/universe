@@ -1,5 +1,5 @@
 import z from "zod";
-import { startedAt } from "../../../env.js";
+import { appStageSchema, env, startedAt } from "../../../env.js";
 import type { AppRouteOptions } from "../../../types.js";
 
 const route: AppRouteOptions = {
@@ -11,6 +11,7 @@ const route: AppRouteOptions = {
         status: z.literal("ok"),
         uptime: z.number().gte(0),
         version: z.number().positive(),
+        stage: appStageSchema,
       }),
     },
   },
@@ -19,6 +20,7 @@ const route: AppRouteOptions = {
       status: "ok",
       uptime: Math.floor((Date.now() - startedAt.getTime()) / 1000),
       version: 1,
+      stage: env.APP_STAGE,
     };
   },
 };
