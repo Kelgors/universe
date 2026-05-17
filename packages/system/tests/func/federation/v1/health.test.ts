@@ -12,7 +12,7 @@ describe("Federation v1 Health Route", () => {
     expect(response.statusCode).toBe(200);
     expect(response.json()).toHaveProperty("status", "ok");
     expect(response.json()).toHaveProperty("uptime");
-    expect(response.json()).toHaveProperty("version");
+    expect(response.json()).toHaveProperty("version", 1);
     expect(response.json()).toHaveProperty("stage", "test");
   });
 });
