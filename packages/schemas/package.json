@@ -23,7 +23,6 @@
     "vitest": "catalog:"
   },
   "dependencies": {
-    "dotenv": "catalog:",
     "zod": "catalog:"
   }
 }

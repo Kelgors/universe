@@ -4,5 +4,7 @@ export default defineConfig({
   test: {
     setupFiles: "./tests/setup.ts",
     globals: true,
+    include: ["./tests/**/*.test.ts"],
+    exclude: ["node_modules", "dist"],
   },
 });
