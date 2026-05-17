@@ -24,6 +24,6 @@ Ce projet est un jeu spatial **4X décentralisé**, où chaque joueur peut hébe
 - **Logique du jeu en temps réel** :
   - Gère les sockets des joueurs présents
   - Gestion des positions, combats, minage, ...
-- **Gère les sauts hyperspatiaux** : Gère la transaction des données joueurs avec l'autre serveur (signature & vérification)
+- **Gère les sauts hyperspatiaux** : Gère la transaction des données joueurs avec l'autre *System* (signature & vérification)
 - **Liste de confiance** : Permet le saut hyperspatial complet avec une liste de confiance réduite de serveurs.
 - **Autonomie** : Chaque noeud est isolé, par défaut les données sont et restent locales.
