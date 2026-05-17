@@ -2,7 +2,9 @@ packages:
   - 'packages/*'
 
 allowBuilds:
+  '@prisma/engines': true
   esbuild: true
+  prisma: true
 
 catalog:
   "@types/node": "^24.12.2"
