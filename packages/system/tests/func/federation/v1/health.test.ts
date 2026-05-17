@@ -1,7 +1,8 @@
 import { createServer } from "../../../../src/server.js";
+import { mockConfig } from "../../../mock.js";
 
 describe("Federation v1 Health Route", () => {
-  const server = createServer();
+  const server = createServer(mockConfig());
 
   it("should return 200 OK with uptime and version", async () => {
     const response = await server.inject({

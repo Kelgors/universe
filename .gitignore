@@ -4,3 +4,4 @@ dist/
 .env*
 generated
 .turbo
+configuration.json

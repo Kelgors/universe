@@ -1,9 +1,16 @@
 import { prisma } from "./prisma.js";
 import { createServer } from "./server.js";
+import "./configuration.js";
+import { program } from "commander";
+import { loadConfig } from "./configuration.js";
 
-export async function start() {
+type StartOptions = {
+  config?: string;
+};
+export async function start(options: StartOptions) {
   await prisma.$connect();
-  const server = createServer();
+  const config = await loadConfig(options.config ?? "configuration.json");
+  const server = createServer(config);
 
   async function exit() {
     await server.close();
@@ -29,4 +36,9 @@ export async function start() {
   });
 }
 
-void start();
+program
+  .name("system")
+  .description("Serve a system node")
+  .option("--config <path>", "Path to the configuration file", "configuration.json")
+  .action(start)
+  .parse(process.argv);
