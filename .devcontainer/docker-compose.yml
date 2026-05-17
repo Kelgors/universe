@@ -5,6 +5,8 @@ services:
       - ..:/workspace
     working_dir: /workspace
     command: sleep infinity
+    environment:
+      DEVCONTAINER: "true"
 
   db:
     image: postgres:18-alpine
