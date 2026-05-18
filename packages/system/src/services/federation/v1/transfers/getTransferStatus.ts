@@ -1,6 +1,9 @@
 import type { handleUnaryCall } from "@grpc/grpc-js";
 import * as grpc from "@grpc/grpc-js";
-import type { GetTransferStatusRequest, GetTransferStatusResponse } from "../../../../generated/federation/index.js";
+import type {
+  GetTransferStatusRequest,
+  GetTransferStatusResponse,
+} from "../../../../generated/federation/universe/federation/v1/transfer.js";
 
 export const getTransferStatus: handleUnaryCall<GetTransferStatusRequest, GetTransferStatusResponse> = (
   _call,

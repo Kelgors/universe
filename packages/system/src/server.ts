@@ -1,6 +1,6 @@
 import * as grpc from "@grpc/grpc-js";
 import type { Configuration } from "./configuration.js";
-import { FederationServiceService } from "./generated/federation/index.js";
+import { FederationServiceService } from "./generated/federation/universe/federation/v1/federation.js";
 import { createFederationHandlers } from "./services/federation/v1/index.js";
 
 export type GrpcServerHandle = {

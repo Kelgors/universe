@@ -1,5 +1,5 @@
 import type { Configuration } from "../../../configuration.js";
-import type { FederationServiceServer } from "../../../generated/federation/index.js";
+import type { FederationServiceServer } from "../../../generated/federation/universe/federation/v1/federation.js";
 import { discovery } from "./discovery.js";
 import { health } from "./health.js";
 import { createListPeersHandler } from "./peers.js";

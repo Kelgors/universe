@@ -1,6 +1,6 @@
 import type { handleUnaryCall } from "@grpc/grpc-js";
 import { appStageSchema, env, startedAt } from "../../../env.js";
-import type { HealthRequest, HealthResponse } from "../../../generated/federation/index.js";
+import type { HealthRequest, HealthResponse } from "../../../generated/federation/universe/federation/v1/federation.js";
 
 export const health: handleUnaryCall<HealthRequest, HealthResponse> = (_call, callback) => {
   callback(null, {

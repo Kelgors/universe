@@ -1,6 +1,9 @@
 import type { handleUnaryCall } from "@grpc/grpc-js";
 import type { Configuration } from "../../../configuration.js";
-import type { ListPeersRequest, ListPeersResponse } from "../../../generated/federation/index.js";
+import type {
+  ListPeersRequest,
+  ListPeersResponse,
+} from "../../../generated/federation/universe/federation/v1/federation.js";
 
 export function createListPeersHandler(config: Configuration): handleUnaryCall<ListPeersRequest, ListPeersResponse> {
   return (_call, callback) => {
