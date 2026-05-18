@@ -1,0 +1,33 @@
+syntax = "proto3";
+
+package universe.federation.v1;
+
+service TransferService {
+  rpc InitTransfer(InitTransferRequest) returns (InitTransferResponse);
+  rpc Snapshot(SnapshotRequest) returns (SnapshotResponse);
+  rpc Commit(CommitRequest) returns (CommitResponse);
+  rpc GetTransferStatus(GetTransferStatusRequest) returns (GetTransferStatusResponse);
+  rpc AbortTransfer(AbortTransferRequest) returns (AbortTransferResponse);
+}
+
+message InitTransferRequest {}
+
+message InitTransferResponse {}
+
+message SnapshotRequest {}
+
+message SnapshotResponse {}
+
+message CommitRequest {}
+
+message CommitResponse {}
+
+message GetTransferStatusRequest {
+  string transfer_id = 1;
+}
+
+message GetTransferStatusResponse {}
+
+message AbortTransferRequest {}
+
+message AbortTransferResponse {}

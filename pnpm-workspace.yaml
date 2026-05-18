@@ -2,9 +2,11 @@ packages:
   - 'packages/*'
 
 allowBuilds:
+  '@bufbuild/buf': true
   '@prisma/engines': true
   esbuild: true
   prisma: true
+  protobufjs: true
 
 catalog:
   "@types/node": "^24.12.2"

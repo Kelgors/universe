@@ -1,0 +1,40 @@
+syntax = "proto3";
+
+package universe.federation.v1;
+
+service FederationService {
+  rpc Health(HealthRequest) returns (HealthResponse);
+  rpc ListPeers(ListPeersRequest) returns (ListPeersResponse);
+  rpc Discovery(DiscoveryRequest) returns (DiscoveryResponse);
+}
+
+message HealthRequest {}
+
+message HealthResponse {
+  string status = 1;
+  int64 uptime = 2;
+  int32 version = 3;
+  string stage = 4;
+}
+
+message Host {
+  string ip = 1;
+  int32 port = 2;
+}
+
+message Peer {
+  string id = 1;
+  Host host = 2;
+  string public_key = 3;
+  string status = 4;
+}
+
+message ListPeersRequest {}
+
+message ListPeersResponse {
+  repeated Peer peers = 1;
+}
+
+message DiscoveryRequest {}
+
+message DiscoveryResponse {}

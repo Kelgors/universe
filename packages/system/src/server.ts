@@ -1,25 +1,50 @@
-import fastify from "fastify";
-import type { ZodTypeProvider } from "fastify-type-provider-zod";
-import { serializerCompiler, validatorCompiler } from "fastify-type-provider-zod";
+import * as grpc from "@grpc/grpc-js";
 import type { Configuration } from "./configuration.js";
-import routes from "./routes/federation/v1/index.js";
+import { FederationServiceService } from "./generated/federation/index.js";
+import { createFederationHandlers } from "./services/federation/v1/index.js";
 
-export function createServer(config: Configuration) {
-  const server = fastify({
-    logger: true,
+export type GrpcServerHandle = {
+  server: grpc.Server;
+  port: number;
+  shutdown: () => Promise<void>;
+};
+
+function bindServer(server: grpc.Server, host: string, port: number): Promise<number> {
+  return new Promise((resolve, reject) => {
+    server.bindAsync(`${host}:${port}`, grpc.ServerCredentials.createInsecure(), (error, boundPort) => {
+      if (error) {
+        reject(error);
+        return;
+      }
+      resolve(boundPort);
+    });
   });
-  server.log.info("System public key: %s", Buffer.from(config.publicKey).toString("hex"));
+}
 
-  server.setValidatorCompiler(validatorCompiler);
-  server.setSerializerCompiler(serializerCompiler);
-  server.decorateRequest("config", null);
-  server.addHook("onRequest", async (req) => {
-    req.setDecorator("config", config);
-  });
+export async function createServer(
+  config: Configuration,
+  options?: { host?: string; port?: number },
+): Promise<GrpcServerHandle> {
+  const host = options?.host ?? "0.0.0.0";
+  const port = options?.port ?? 3000;
 
-  for (const route of routes) {
-    server.withTypeProvider<ZodTypeProvider>().route(route);
-  }
+  const server = new grpc.Server();
+  server.addService(FederationServiceService, createFederationHandlers(config));
 
-  return server;
+  const boundPort = await bindServer(server, host, port);
+
+  return {
+    server,
+    port: boundPort,
+    shutdown: () =>
+      new Promise((resolve, reject) => {
+        server.tryShutdown((error) => {
+          if (error) {
+            reject(error);
+            return;
+          }
+          resolve();
+        });
+      }),
+  };
 }

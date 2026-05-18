@@ -1,6 +1,6 @@
 // Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
 
-exports[`Federation v1 Peers Route > should return 200 OK with list of trusted peers 1`] = `
+exports[`Federation v1 Peers > should return the list of trusted peers 1`] = `
 {
   "peers": [
     {
