@@ -38,6 +38,7 @@ model FederationPlayerTransfer {
 
 model FederationEvent {
   id        String @id @default(uuid())
+  nodeId    String
   eventType String
   payload   Json
   signature String
