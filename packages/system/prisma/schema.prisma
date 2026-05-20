@@ -28,7 +28,7 @@ model FederationPlayerTransfer {
   state          FederationPlayerTransferState
   sourceSystemId String
   targetSystemId String
-  snapshot       Json
+  snapshot       Json?
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt

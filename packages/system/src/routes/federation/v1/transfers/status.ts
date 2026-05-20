@@ -1,11 +1,11 @@
-import type { RouteOptions } from "fastify";
+import type { FastifyZodInstance } from "../../../../types.js";
 
-const route: RouteOptions = {
-  method: "GET",
-  url: "/federation/v1/transfers/:transferId/status",
-  handler: async (_request, reply) => {
-    return reply.status(500).send({ error: "Not implemented" });
-  },
+export default (fastify: FastifyZodInstance) => {
+  fastify.route({
+    method: "GET",
+    url: "/federation/v1/transfers/status",
+    handler: async (_request, reply) => {
+      return reply.status(500).send({ error: "Not implemented" });
+    },
+  });
 };
-
-export default route;

@@ -1,5 +1,7 @@
 import type {
   ContextConfigDefault,
+  FastifyBaseLogger,
+  FastifyInstance,
   FastifySchema,
   RawReplyDefaultExpression,
   RawRequestDefaultExpression,
@@ -16,5 +18,13 @@ export type AppRouteOptions = RouteOptions<
   RouteGenericInterface,
   ContextConfigDefault,
   FastifySchema,
+  ZodTypeProvider
+>;
+
+export type FastifyZodInstance = FastifyInstance<
+  RawServerDefault,
+  RawRequestDefaultExpression<RawServerDefault>,
+  RawReplyDefaultExpression<RawServerDefault>,
+  FastifyBaseLogger,
   ZodTypeProvider
 >;

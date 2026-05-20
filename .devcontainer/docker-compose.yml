@@ -18,5 +18,9 @@ services:
       - postgres:/var/lib/postgresql
       - ./postgres.sql:/docker-entrypoint-initdb.d/postgres.sql
 
+  valkey:
+    image: valkey/valkey:9.1.0-alpine
+    restart: unless-stopped
+
 volumes:
   postgres:
