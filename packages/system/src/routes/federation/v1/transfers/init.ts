@@ -1,4 +1,6 @@
 import z from "zod";
+import type { Configuration } from "../../../../configuration.js";
+import { createSignedMessage } from "../../../../crypto.js";
 import { FederationPlayerTransferState } from "../../../../generated/prisma/enums.js";
 import { checkSignature, checkSignatureResponses } from "../../../../middlewares/checkSignature.js";
 import { prisma } from "../../../../prisma.js";
@@ -22,29 +24,48 @@ export default (fastify: FastifyZodInstance) => {
         signature: z.string(),
       }),
       response: {
+        400: z.union([zodErrorResponseSchema, z.object({ error: z.string() })]),
         ...checkSignatureResponses,
         200: z.object({
-          id: z.string(),
-          requestId: z.string(),
-          sourceSystemId: z.string(),
-          targetSystemId: z.string(),
-          playerId: z.string(),
-          timestamp: z.iso.datetime(),
+          message: z.object({
+            id: z.string(),
+            requestId: z.string(),
+            sourceSystemId: z.string(),
+            targetSystemId: z.string(),
+            playerId: z.string(),
+            timestamp: z.iso.datetime(),
+          }),
+          signature: z.string(),
         }),
-        400: zodErrorResponseSchema,
         409: z.object({
           error: z.string(),
         }),
       },
     },
-    preHandler: [checkSignature],
+    preValidation: [checkSignature],
     handler: async (request, reply) => {
+      const config = request.getDecorator<Configuration>("config");
+      const { message, nodeId, signature } = request.body;
+
+      if (message.sourceSystemId !== nodeId) {
+        return reply.status(400).send({ error: "Only source system can initiate transfer" });
+      }
+
+      if (message.targetSystemId !== config.nodeId) {
+        return reply.status(400).send({ error: "Only target system can accept transfer" });
+      }
+
+      await prisma.federationEvent.create({
+        data: {
+          eventType: "FEDERATION_TRANSFER_INIT",
+          nodeId,
+          payload: JSON.stringify(message),
+          signature,
+        },
+      });
+
       const isRequestIdExists = await prisma.federationPlayerTransfer
-        .count({
-          where: {
-            requestId: request.body.message.requestId,
-          },
-        })
+        .count({ where: { requestId: message.requestId } })
         .then((count) => count > 0);
       if (isRequestIdExists) {
         return reply.status(409).send({ error: "Transfer with the same requestId already exists" });
@@ -52,18 +73,15 @@ export default (fastify: FastifyZodInstance) => {
 
       const dbTranfer = await prisma.federationPlayerTransfer.create({
         data: {
-          requestId: request.body.message.requestId,
-          sourceSystemId: request.body.message.sourceSystemId,
-          targetSystemId: request.body.message.targetSystemId,
-          playerId: request.body.message.playerId,
+          requestId: message.requestId,
+          sourceSystemId: message.sourceSystemId,
+          targetSystemId: message.targetSystemId,
+          playerId: message.playerId,
           state: FederationPlayerTransferState.APPROVED_BY_TARGET,
         },
       });
 
-      return {
-        ...dbTranfer,
-        timestamp: dbTranfer.createdAt.toISOString(),
-      };
+      return createSignedMessage({ ...dbTranfer, timestamp: dbTranfer.createdAt.toISOString() }, config.privateKey);
     },
   });
 };

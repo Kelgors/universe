@@ -1,0 +1,106 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`Federation Transfers Init > should be a 400 when there is no body 1`] = `
+{
+  "details": {
+    "issues": [
+      {
+        "instancePath": "/",
+        "keyword": "invalid_type",
+        "message": "Invalid input: expected object, received undefined",
+        "params": {
+          "expected": "object",
+        },
+        "schemaPath": "#//invalid_type",
+      },
+    ],
+    "method": "POST",
+    "url": "/federation/v1/transfers/init",
+  },
+  "error": "Response Validation Error",
+  "message": "Request doesn't match the schema",
+  "statusCode": 400,
+}
+`;
+
+exports[`Federation Transfers Init > should send status 400 when fields in body are missing 1`] = `
+{
+  "details": {
+    "issues": [
+      {
+        "instancePath": "/message",
+        "keyword": "invalid_type",
+        "message": "Invalid input: expected nonoptional, received undefined",
+        "params": {
+          "expected": "nonoptional",
+        },
+        "schemaPath": "#/message/invalid_type",
+      },
+      {
+        "instancePath": "/signature",
+        "keyword": "invalid_type",
+        "message": "Invalid input: expected string, received undefined",
+        "params": {
+          "expected": "string",
+        },
+        "schemaPath": "#/signature/invalid_type",
+      },
+      {
+        "instancePath": "/nodeId",
+        "keyword": "invalid_type",
+        "message": "Invalid input: expected string, received undefined",
+        "params": {
+          "expected": "string",
+        },
+        "schemaPath": "#/nodeId/invalid_type",
+      },
+    ],
+    "method": "POST",
+    "url": "/federation/v1/transfers/init",
+  },
+  "error": "Response Validation Error",
+  "message": "Request doesn't match the schema",
+  "statusCode": 400,
+}
+`;
+
+exports[`Federation Transfers Init > should send status 400 when message is not valid 1`] = `
+{
+  "details": {
+    "issues": [
+      {
+        "instancePath": "/message/sourceSystemId",
+        "keyword": "invalid_type",
+        "message": "Invalid input: expected string, received undefined",
+        "params": {
+          "expected": "string",
+        },
+        "schemaPath": "#/message/sourceSystemId/invalid_type",
+      },
+      {
+        "instancePath": "/message/targetSystemId",
+        "keyword": "invalid_type",
+        "message": "Invalid input: expected string, received undefined",
+        "params": {
+          "expected": "string",
+        },
+        "schemaPath": "#/message/targetSystemId/invalid_type",
+      },
+      {
+        "instancePath": "/message/playerId",
+        "keyword": "invalid_type",
+        "message": "Invalid input: expected string, received undefined",
+        "params": {
+          "expected": "string",
+        },
+        "schemaPath": "#/message/playerId/invalid_type",
+      },
+    ],
+    "method": "POST",
+    "url": "/federation/v1/transfers/init",
+  },
+  "error": "Response Validation Error",
+  "message": "Request doesn't match the schema",
+  "statusCode": 400,
+}
+`;

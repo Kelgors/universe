@@ -1,4 +1,3 @@
-import { KeyObject } from "node:crypto";
 import { createServer } from "../../../../src/server.js";
 import { mockConfig, NODE2_IDENTITY } from "../../../mock.js";
 

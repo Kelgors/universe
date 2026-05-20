@@ -4,6 +4,7 @@ import { promisify } from "node:util";
 import z from "zod";
 
 export const configFileSchema = z.object({
+  nodeId: z.string(),
   privateKey: z.string().transform((txt) => {
     return createPrivateKey({ key: Buffer.from(txt, "utf-8"), format: "pem", type: "pkcs8" });
   }),
@@ -48,6 +49,7 @@ export async function loadConfig(path: string) {
   const publicKey = createPublicKey(parsedConfig.privateKey);
 
   return {
+    nodeId: parsedConfig.nodeId,
     privateKey: parsedConfig.privateKey,
     publicKey,
     trustedPeers: parsedConfig.trustedPeers ?? [],
