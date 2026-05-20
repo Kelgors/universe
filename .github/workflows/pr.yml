@@ -8,6 +8,7 @@ jobs:
   check:
     name: Check PR
     runs-on: ubuntu-24.04
+    container: node:24-alpine
     services:
       db:
         image: postgres:18-alpine
