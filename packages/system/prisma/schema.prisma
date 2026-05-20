@@ -1,8 +1,3 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
-// Get a free hosted Postgres database in seconds: `npx create-db`
-
 generator client {
   provider = "prisma-client"
   output   = "../src/generated/prisma"
@@ -10,4 +5,42 @@ generator client {
 
 datasource db {
   provider = "postgresql"
+}
+
+enum FederationPlayerTransferState {
+  WAITING_TARGET_APPROVAL
+  APPROVED_BY_TARGET
+  SNAPSHOT_SENT_TO_TARGET
+  SNAPSHOT_STAGED_BY_TARGET
+  COMMIT_SENT_TO_TARGET
+  ACTIVE
+  REJECTED_BY_TARGET_AT_INIT
+  REJECTED_BY_TARGET_AT_SNAPSHOT
+  ABORTED_BY_SOURCE
+  ABORTED_BY_TARGET
+  EXPIRED
+}
+
+model FederationPlayerTransfer {
+  id             String                        @id @default(uuid())
+  requestId      String
+  playerId       String
+  state          FederationPlayerTransferState
+  sourceSystemId String
+  targetSystemId String
+  snapshot       Json
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([requestId])
+}
+
+model FederationEvent {
+  id        String @id @default(uuid())
+  eventType String
+  payload   Json
+  signature String
+
+  createdAt DateTime @default(now())
 }
