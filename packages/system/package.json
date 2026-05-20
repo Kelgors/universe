@@ -12,6 +12,7 @@
     "start": "node dist/index.js",
     "test": "vitest",
     "test:run": "vitest --run",
+    "test:migrate": "DOTENV_CONFIG_PATH=tests/.test.env prisma migrate dev",
     "clean": "rm -rf dist",
     "prisma:generate": "prisma generate",
     "prisma:migrate": "prisma migrate dev",
