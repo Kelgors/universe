@@ -117,7 +117,11 @@ describe("Federation Transfers Init", () => {
     });
 
     expect(response.statusCode).toBe(400);
-    expect(response.json()).toEqual({ error: "Only source system can initiate transfer" });
+    expect(response.json()).toEqual({
+      error: "Bad Request",
+      message: "Only source system can initiate transfer",
+      statusCode: 400,
+    });
   });
 
   it("should send status 400 when target system is not the one accepting the transfer", async () => {
@@ -142,7 +146,11 @@ describe("Federation Transfers Init", () => {
     });
 
     expect(response.statusCode).toBe(400);
-    expect(response.json()).toEqual({ error: "Only target system can accept transfer" });
+    expect(response.json()).toEqual({
+      error: "Bad Request",
+      message: "Only target system can accept transfer",
+      statusCode: 400,
+    });
   });
 
   it("should send status 409 when requestId already exists", async () => {
@@ -169,7 +177,11 @@ describe("Federation Transfers Init", () => {
     });
 
     expect(response.statusCode).toBe(409);
-    expect(response.json()).toEqual({ error: "Transfer with the same requestId already exists" });
+    expect(response.json()).toEqual({
+      error: "Conflict",
+      message: "Transfer with the same requestId already exists",
+      statusCode: 409,
+    });
   });
 
   it("should send status 200", async () => {

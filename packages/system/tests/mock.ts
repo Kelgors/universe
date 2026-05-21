@@ -2,9 +2,16 @@ import { generateKeyPair } from "node:crypto";
 import { promisify } from "node:util";
 import type { Configuration } from "../src/configuration.js";
 import { FederationPlayerTransferState } from "../src/generated/prisma/enums.js";
+import type { FastifyZodInstance } from "../src/types.js";
 
 export const NODE1_IDENTITY = await promisify(generateKeyPair)("ed25519");
 export const NODE2_IDENTITY = await promisify(generateKeyPair)("ed25519");
+
+export function mockFastify(): FastifyZodInstance {
+  return {
+    route: vi.fn(),
+  } as never;
+}
 
 export function mockConfig(override?: Partial<Configuration>): Configuration {
   return {

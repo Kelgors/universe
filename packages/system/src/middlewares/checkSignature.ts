@@ -3,14 +3,20 @@ import z from "zod";
 import type { Configuration } from "../configuration.js";
 import { identifiedSignedMessageSchema, isSignatureOk } from "../crypto.js";
 import { createFastifyValidationError, createValidationError } from "../errorHandler.js";
+import { zodErrorResponseSchema } from "../schemas.js";
 
 export const checkSignatureResponses = {
+  400: zodErrorResponseSchema,
   401: z.object({
     error: z.string(),
   }),
 };
 
-export const checkSignature = async (request: FastifyRequest, reply: FastifyReply) => {
+type FastifyRequestWithSignature = FastifyRequest & {
+  body: z.infer<typeof identifiedSignedMessageSchema>;
+};
+
+export const checkSignature = async (request: FastifyRequestWithSignature, reply: FastifyReply) => {
   const config = request.getDecorator<Configuration>("config");
 
   const result = identifiedSignedMessageSchema.safeParse(request.body);

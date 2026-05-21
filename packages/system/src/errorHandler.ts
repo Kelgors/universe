@@ -1,7 +1,12 @@
 import type { FastifyReply, FastifyRequest } from "fastify";
-import { hasZodFastifySchemaValidationErrors, type ZodFastifySchemaValidationError } from "fastify-type-provider-zod";
+import {
+  hasZodFastifySchemaValidationErrors,
+  isResponseSerializationError,
+  type ZodFastifySchemaValidationError,
+} from "fastify-type-provider-zod";
+import { omit } from "lodash-es";
+import { type ZodType, z } from "zod";
 import type { $ZodError } from "zod/v4/core";
-import { env } from "./env.js";
 
 export function createValidationError(req: FastifyRequest, error: ZodFastifySchemaValidationError) {
   return {
@@ -14,18 +19,6 @@ export function createValidationError(req: FastifyRequest, error: ZodFastifySche
       url: req.url,
     },
   };
-}
-
-// FROM fastify-type-provider-zod
-function omit<T extends object, K extends keyof T>(obj: T, keys: readonly K[]): Omit<T, K> {
-  const result = {} as Omit<T, K>;
-  for (const key of Object.keys(obj) as Array<keyof T>) {
-    if (!keys.includes(key as K)) {
-      // @ts-expect-error
-      result[key] = obj[key];
-    }
-  }
-  return result;
 }
 
 const ZodFastifySchemaValidationErrorSymbol: symbol = Symbol.for("ZodFastifySchemaValidationError");
@@ -43,20 +36,45 @@ export function createFastifyValidationError(error: $ZodError): ZodFastifySchema
     };
   });
 }
-// ENDFROM
 
-export function errorHandler(err: unknown, req: FastifyRequest, reply: FastifyReply) {
-  if (hasZodFastifySchemaValidationErrors(err)) {
-    console.dir(err);
-    return reply.code(400).send(createValidationError(req, err.validation));
+export function mergeSchemas(...schemas: { [key: number]: ZodType }[]) {
+  const mergedSchema: { [key: number]: ZodType[] } = {};
+  for (const validationMap of schemas) {
+    for (const statusCode in validationMap) {
+      const schema = validationMap[statusCode];
+      if (!mergedSchema[statusCode]) {
+        mergedSchema[statusCode] = [];
+      }
+      if (!mergedSchema[statusCode].some((s) => s === schema)) {
+        mergedSchema[statusCode].push(schema);
+      }
+    }
+  }
+  return Object.fromEntries(
+    Object.entries(mergedSchema).map(([statusCode, schemas]) => {
+      if (schemas.length === 1) {
+        return [statusCode, schemas[0]];
+      }
+      return [statusCode, z.union(schemas)];
+    }),
+  );
+}
+
+export function errorHandler(error: unknown, req: FastifyRequest, reply: FastifyReply) {
+  if (hasZodFastifySchemaValidationErrors(error)) {
+    return reply.code(400).send(createValidationError(req, error.validation));
   }
 
-  if (env.APP_STAGE !== "prod") {
-    console.error("Unexpected error");
-    console.dir(err, { depth: null });
-  } else {
-    console.error("Unexpected error:", err instanceof Error ? err.stack : err);
+  if (isResponseSerializationError(error)) {
+    req.log.error({ error }, "Response serialization error");
+    return reply.code(500).send({
+      error: "Response Serialization Error",
+      message: "An error occurred while serializing the response",
+      statusCode: 500,
+    });
   }
+
+  req.log.error({ error }, "Unexpected error");
   reply.code(500).send({
     error: "Internal Server Error",
     message: "An unexpected error occurred",
