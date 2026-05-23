@@ -1,7 +1,11 @@
 import { hash } from "node:crypto";
 import z from "zod";
 import { createSignedMessageSchema } from "../../../../crypto.js";
-import { createFastifyValidationError, createValidationError } from "../../../../errors/handler.js";
+import {
+  createFastifyValidationError,
+  createValidationError,
+  mergeResponseValidationSchema as merge,
+} from "../../../../errors/handler.js";
 import {
   snapshotHashNotMatch,
   snapshotParseError,
@@ -10,10 +14,14 @@ import {
 } from "../../../../errors/replies.js";
 import { FederationPlayerTransferState } from "../../../../generated/prisma/enums.js";
 import { safeParse } from "../../../../helpers/json.js";
-import { checkMessageTimestamp } from "../../../../middlewares/checkMessageTimestamp.js";
-import { checkSignature } from "../../../../middlewares/checkSignature.js";
+import {
+  checkMessageTimestamp,
+  checkMessageTimestampResponses,
+} from "../../../../middlewares/checkMessageTimestamp.js";
+import { checkSignature, checkSignatureResponses } from "../../../../middlewares/checkSignature.js";
 import { saveFederationEvent } from "../../../../middlewares/saveFederationEvent.js";
 import { prisma } from "../../../../prisma.js";
+import { defaultServerValidation, errorResponseSchema } from "../../../../schemas.js";
 import type { FastifyZodInstance } from "../../../../types.js";
 
 const schema = {
@@ -26,6 +34,11 @@ const schema = {
       timestamp: z.coerce.date(),
     }),
   ),
+  response: merge(defaultServerValidation, checkSignatureResponses, checkMessageTimestampResponses, {
+    204: z.undefined(),
+    400: errorResponseSchema,
+    404: errorResponseSchema,
+  }),
 };
 
 export default (fastify: FastifyZodInstance) => {

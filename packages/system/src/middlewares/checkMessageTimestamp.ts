@@ -1,6 +1,11 @@
 import type { FastifyReply, FastifyRequest } from "fastify";
 import type { SignedMessage } from "../crypto.js";
 import { ACCEPTABLE_TIME_RANGE } from "../env.js";
+import { zodErrorResponseSchema } from "../schemas.js";
+
+export const checkMessageTimestampResponses = {
+  400: zodErrorResponseSchema,
+};
 
 type FastifyRequestWithTimestampedMessage = FastifyRequest & {
   body: SignedMessage<{ timestamp: Date }>;
