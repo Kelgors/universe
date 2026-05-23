@@ -1,32 +1,34 @@
+import { createPrivateKey, createPublicKey, generateKeyPair } from "node:crypto";
 import { readFile, writeFile } from "node:fs/promises";
-import { type Bytes, getPublicKeyAsync, keygenAsync } from "@noble/ed25519";
+import { promisify } from "node:util";
 import z from "zod";
 
-function transformKey(hex: string): Bytes {
-  return Buffer.from(hex, "hex");
-}
-
 export const configFileSchema = z.object({
-  privateKey: z.string().transform(transformKey),
+  nodeId: z.string(),
+  privateKey: z.string().transform((txt) => {
+    return createPrivateKey({ key: Buffer.from(txt, "utf-8"), format: "pem", type: "pkcs8" });
+  }),
   trustedPeers: z
     .object({
-      id: z.string(),
+      nodeId: z.string(),
       comment: z.string().optional(),
       host: z.string().transform((host) => {
         const [hostname, port] = host.split(":");
         return { ip: z.hostname(hostname).parse(hostname), port: z.number().gt(0).lte(65535).parse(Number(port)) };
       }),
-      publicKey: z.string().transform(transformKey),
+      publicKey: z.string().transform((txt) => {
+        return createPublicKey({ key: Buffer.from(txt, "utf-8"), format: "pem", type: "spki" });
+      }),
     })
     .array()
     .optional(),
 });
 
 async function createDefaultConfig(path: string) {
-  const { secretKey } = await keygenAsync();
+  const { privateKey } = await promisify(generateKeyPair)("ed25519");
   const config = JSON.stringify(
     {
-      privateKey: Buffer.from(secretKey).toString("hex"),
+      privateKey: privateKey.export({ format: "pem", type: "pkcs8" }).toString(),
       trustedPeers: [],
     },
     null,
@@ -44,9 +46,10 @@ export async function loadConfig(path: string) {
     throw err;
   });
   const parsedConfig = configFileSchema.parse(JSON.parse(fileContent));
-  const publicKey: Bytes = await getPublicKeyAsync(parsedConfig.privateKey);
+  const publicKey = createPublicKey(parsedConfig.privateKey);
 
   return {
+    nodeId: parsedConfig.nodeId,
     privateKey: parsedConfig.privateKey,
     publicKey,
     trustedPeers: parsedConfig.trustedPeers ?? [],

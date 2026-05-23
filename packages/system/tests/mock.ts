@@ -1,17 +1,41 @@
+import { generateKeyPair } from "node:crypto";
+import { promisify } from "node:util";
 import type { Configuration } from "../src/configuration.js";
+import { FederationPlayerTransferState } from "../src/generated/prisma/enums.js";
+import type { FastifyZodInstance } from "../src/types.js";
+
+export const NODE1_IDENTITY = await promisify(generateKeyPair)("ed25519");
+export const NODE2_IDENTITY = await promisify(generateKeyPair)("ed25519");
+
+export function mockFastify(): FastifyZodInstance {
+  return {
+    route: vi.fn(),
+  } as never;
+}
 
 export function mockConfig(override?: Partial<Configuration>): Configuration {
   return {
-    privateKey: Buffer.from("7ff575ba2741f24317853a9ba63f82519ffa6ce155dc53ab589e911e16ca4aff", "hex"),
-    publicKey: Buffer.from("7102f7229e15bc2887de14079991935ab7a6ac4383dfe7cfdfccbc01e38a1b46", "hex"),
+    nodeId: "00000000-0000-4000-8000-000000000000",
+    privateKey: NODE1_IDENTITY.privateKey,
+    publicKey: NODE1_IDENTITY.publicKey,
     trustedPeers: [
       {
-        id: "833ad174-d44e-45fb-a8b4-e5c77ddf6b6a",
+        nodeId: "00000000-0000-4000-8000-000000000001",
         comment: "System Dublin Delta",
         host: { ip: "127.0.0.1", port: 8000 },
-        publicKey: Buffer.from("e26b33ada5b0ecee9b70d7997aed01897e8e2d2a72f76bd95a434a5abd802a86", "hex"),
+        publicKey: NODE2_IDENTITY.publicKey,
       },
     ],
     ...override,
+  };
+}
+
+export function mockFederationTransfer() {
+  return {
+    requestId: "00000000-0000-4000-8000-000000000000",
+    sourceSystemId: "00000000-0000-4000-8000-000000000001",
+    targetSystemId: "00000000-0000-4000-8000-000000000000",
+    playerId: "00000000-0000-4000-8000-000000000000",
+    state: FederationPlayerTransferState.APPROVED_BY_TARGET,
   };
 }

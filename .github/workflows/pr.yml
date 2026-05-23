@@ -8,6 +8,7 @@ jobs:
   check:
     name: Check PR
     runs-on: ubuntu-24.04
+    container: node:24-alpine
     services:
       db:
         image: postgres:18-alpine
@@ -37,6 +38,9 @@ jobs:
 
       - name: Run lint
         run: pnpm exec turbo check
+
+      - name: Migrate database
+        run: pnpm exec turbo test:migrate
 
       - name: Run tests
         run: pnpm exec turbo test:run -- --passWithNoTests
