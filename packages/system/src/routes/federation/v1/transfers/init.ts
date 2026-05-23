@@ -1,7 +1,12 @@
 import z from "zod";
 import type { Configuration } from "../../../../configuration.js";
 import { createSignedMessage, createSignedMessageSchema } from "../../../../crypto.js";
-import { mergeResponseValidationSchema as merge } from "../../../../errorHandler.js";
+import { mergeResponseValidationSchema as merge } from "../../../../errors/handler.js";
+import {
+  onlySourceSystemCanInitiateTransfer,
+  onlyTargetSystemCanAcceptTransfer,
+  transferRequestIdAlreadyExists,
+} from "../../../../errors/replies.js";
 import { FederationPlayerTransferState } from "../../../../generated/prisma/enums.js";
 import { checkSignature, checkSignatureResponses } from "../../../../middlewares/checkSignature.js";
 import { saveFederationEvent } from "../../../../middlewares/saveFederationEvent.js";
@@ -49,24 +54,18 @@ export default (fastify: FastifyZodInstance) => {
       const { message, nodeId: sourceNodeId } = request.body;
 
       if (message.sourceSystemId !== sourceNodeId) {
-        return reply
-          .status(400)
-          .send({ error: "Bad Request", message: "Only source system can initiate transfer", statusCode: 400 });
+        return onlySourceSystemCanInitiateTransfer(reply);
       }
 
       if (message.targetSystemId !== config.nodeId) {
-        return reply
-          .status(400)
-          .send({ error: "Bad Request", message: "Only target system can accept transfer", statusCode: 400 });
+        return onlyTargetSystemCanAcceptTransfer(reply);
       }
 
       const isRequestIdExists = await prisma.federationPlayerTransfer
         .count({ where: { requestId: message.requestId } })
         .then((count) => count > 0);
       if (isRequestIdExists) {
-        return reply
-          .status(409)
-          .send({ error: "Conflict", message: "Transfer with the same requestId already exists", statusCode: 409 });
+        return transferRequestIdAlreadyExists(reply);
       }
 
       const dbTranfer = await prisma.federationPlayerTransfer.create({

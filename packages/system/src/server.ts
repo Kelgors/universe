@@ -1,7 +1,7 @@
 import fastify from "fastify";
 import { serializerCompiler, validatorCompiler } from "fastify-type-provider-zod";
 import type { Configuration } from "./configuration.js";
-import { errorHandler } from "./errorHandler.js";
+import { errorHandler } from "./errors/handler.js";
 import routes from "./routes/federation/v1/index.js";
 
 export function createServer(config: Configuration) {

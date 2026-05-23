@@ -21,8 +21,6 @@ export const zodErrorResponseSchema = z.object({
 
 export const errorResponseSchema = z.object({
   error: z.string(),
-  message: z.string(),
-  statusCode: z.number(),
 });
 
 export const defaultServerValidation = {

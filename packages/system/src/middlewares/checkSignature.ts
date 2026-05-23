@@ -2,7 +2,7 @@ import type { FastifyReply, FastifyRequest } from "fastify";
 import z from "zod";
 import type { Configuration } from "../configuration.js";
 import { createSignedMessageSchema, isSignatureOk, type SignedMessage } from "../crypto.js";
-import { createFastifyValidationError, createValidationError } from "../errorHandler.js";
+import { createFastifyValidationError, createValidationError } from "../errors/handler.js";
 import { zodErrorResponseSchema } from "../schemas.js";
 
 export const checkSignatureResponses = {

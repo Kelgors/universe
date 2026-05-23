@@ -75,17 +75,9 @@ export function errorHandler(error: unknown, req: FastifyRequest, reply: Fastify
 
   if (isResponseSerializationError(error)) {
     req.log.error({ error }, "Response serialization error");
-    return reply.code(500).send({
-      error: "Response Serialization Error",
-      message: "An error occurred while serializing the response",
-      statusCode: 500,
-    });
+    return reply.code(500).send({ error: "An error occurred while serializing the response" });
   }
 
   req.log.error({ error }, "Unexpected error");
-  reply.code(500).send({
-    error: "Internal Server Error",
-    message: "An unexpected error occurred",
-    statusCode: 500,
-  });
+  reply.code(500).send({ error: "An unexpected error occurred" });
 }
