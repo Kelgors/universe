@@ -1,12 +1,13 @@
 import z from "zod";
 import type { Configuration } from "../../../../configuration.js";
-import { createSignedMessage } from "../../../../crypto.js";
-import { mergeSchemas } from "../../../../errorHandler.js";
+import { createSignedMessage, createSignedMessageSchema } from "../../../../crypto.js";
+import { mergeResponseValidationSchema as merge } from "../../../../errorHandler.js";
 import { FederationPlayerTransferState } from "../../../../generated/prisma/enums.js";
 import { checkSignature, checkSignatureResponses } from "../../../../middlewares/checkSignature.js";
 import { saveFederationEvent } from "../../../../middlewares/saveFederationEvent.js";
 import { prisma } from "../../../../prisma.js";
-import { defaultServerValidation, errorResponseSchema, type FastifyZodInstance } from "../../../../types.js";
+import { defaultServerValidation, errorResponseSchema } from "../../../../schemas.js";
+import type { FastifyZodInstance } from "../../../../types.js";
 
 const schema = {
   body: z.object({
@@ -20,9 +21,9 @@ const schema = {
     nodeId: z.uuid(),
     signature: z.string(),
   }),
-  response: mergeSchemas(defaultServerValidation, checkSignatureResponses, {
-    200: z.object({
-      message: z.object({
+  response: merge(defaultServerValidation, checkSignatureResponses, {
+    200: createSignedMessageSchema(
+      z.object({
         id: z.string(),
         requestId: z.string(),
         sourceSystemId: z.string(),
@@ -30,8 +31,7 @@ const schema = {
         playerId: z.string(),
         timestamp: z.iso.datetime(),
       }),
-      signature: z.string(),
-    }),
+    ),
     400: errorResponseSchema,
     409: errorResponseSchema,
   }),
@@ -46,9 +46,9 @@ export default (fastify: FastifyZodInstance) => {
     preHandler: [saveFederationEvent("FEDERATION_TRANSFER_INIT")],
     handler: async (request, reply) => {
       const config = request.getDecorator<Configuration>("config");
-      const { message, nodeId } = request.body;
+      const { message, nodeId: sourceNodeId } = request.body;
 
-      if (message.sourceSystemId !== nodeId) {
+      if (message.sourceSystemId !== sourceNodeId) {
         return reply
           .status(400)
           .send({ error: "Bad Request", message: "Only source system can initiate transfer", statusCode: 400 });
@@ -79,7 +79,7 @@ export default (fastify: FastifyZodInstance) => {
         },
       });
 
-      return createSignedMessage({ ...dbTranfer, timestamp: dbTranfer.createdAt.toISOString() }, config.privateKey);
+      return createSignedMessage({ ...dbTranfer, timestamp: dbTranfer.createdAt.toISOString() }, config);
     },
   });
 };

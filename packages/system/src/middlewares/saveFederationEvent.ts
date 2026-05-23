@@ -1,10 +1,9 @@
 import type { FastifyRequest } from "fastify";
-import type z from "zod";
-import type { identifiedSignedMessageSchema } from "../crypto.js";
+import type { SignedMessage } from "../crypto.js";
 import { prisma } from "../prisma.js";
 
 type FastifyRequestWithFederationEvent = FastifyRequest & {
-  body: z.infer<typeof identifiedSignedMessageSchema>;
+  body: SignedMessage;
 };
 
 export function saveFederationEvent(eventType: string) {

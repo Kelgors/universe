@@ -37,21 +37,29 @@ export function createFastifyValidationError(error: $ZodError): ZodFastifySchema
   });
 }
 
-export function mergeSchemas(...schemas: { [key: number]: ZodType }[]) {
-  const mergedSchema: { [key: number]: ZodType[] } = {};
+export function mergeResponseValidationSchema(...schemas: { [key: number]: ZodType }[]) {
+  const mergedSchema: Map<number, ZodType[]> = new Map();
   for (const validationMap of schemas) {
-    for (const statusCode in validationMap) {
-      const schema = validationMap[statusCode];
-      if (!mergedSchema[statusCode]) {
-        mergedSchema[statusCode] = [];
+    for (const statusCodeTxt in validationMap) {
+      const statusCode = Number(statusCodeTxt);
+      if (Number.isNaN(statusCode)) {
+        throw new Error(`Invalid status code: ${statusCodeTxt}`);
       }
-      if (!mergedSchema[statusCode].some((s) => s === schema)) {
-        mergedSchema[statusCode].push(schema);
+
+      const schema = validationMap[statusCodeTxt];
+      if (!mergedSchema.has(statusCode)) {
+        mergedSchema.set(statusCode, []);
+      }
+
+      const existingSchemas = mergedSchema.get(statusCode);
+      if (!existingSchemas) throw new Error("Unexpected error: existingSchemas should be defined");
+      if (!existingSchemas.some((s) => s === schema)) {
+        existingSchemas.push(schema);
       }
     }
   }
   return Object.fromEntries(
-    Object.entries(mergedSchema).map(([statusCode, schemas]) => {
+    Array.from(mergedSchema.entries()).map(([statusCode, schemas]) => {
       if (schemas.length === 1) {
         return [statusCode, schemas[0]];
       }

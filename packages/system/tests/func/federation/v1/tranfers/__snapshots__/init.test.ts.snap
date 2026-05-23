@@ -37,15 +37,6 @@ exports[`Federation Transfers Init > should send status 400 when fields in body 
         "schemaPath": "#/message/invalid_type",
       },
       {
-        "instancePath": "/signature",
-        "keyword": "invalid_type",
-        "message": "Invalid input: expected string, received undefined",
-        "params": {
-          "expected": "string",
-        },
-        "schemaPath": "#/signature/invalid_type",
-      },
-      {
         "instancePath": "/nodeId",
         "keyword": "invalid_type",
         "message": "Invalid input: expected string, received undefined",
@@ -53,6 +44,15 @@ exports[`Federation Transfers Init > should send status 400 when fields in body 
           "expected": "string",
         },
         "schemaPath": "#/nodeId/invalid_type",
+      },
+      {
+        "instancePath": "/signature",
+        "keyword": "invalid_type",
+        "message": "Invalid input: expected string, received undefined",
+        "params": {
+          "expected": "string",
+        },
+        "schemaPath": "#/signature/invalid_type",
       },
     ],
     "method": "POST",

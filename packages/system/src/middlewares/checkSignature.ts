@@ -1,7 +1,7 @@
 import type { FastifyReply, FastifyRequest } from "fastify";
 import z from "zod";
 import type { Configuration } from "../configuration.js";
-import { identifiedSignedMessageSchema, isSignatureOk } from "../crypto.js";
+import { createSignedMessageSchema, isSignatureOk, type SignedMessage } from "../crypto.js";
 import { createFastifyValidationError, createValidationError } from "../errorHandler.js";
 import { zodErrorResponseSchema } from "../schemas.js";
 
@@ -12,14 +12,16 @@ export const checkSignatureResponses = {
   }),
 };
 
+const signedMessageSchema = createSignedMessageSchema(z.unknown());
+
 type FastifyRequestWithSignature = FastifyRequest & {
-  body: z.infer<typeof identifiedSignedMessageSchema>;
+  body: SignedMessage<unknown>;
 };
 
 export const checkSignature = async (request: FastifyRequestWithSignature, reply: FastifyReply) => {
   const config = request.getDecorator<Configuration>("config");
 
-  const result = identifiedSignedMessageSchema.safeParse(request.body);
+  const result = signedMessageSchema.safeParse(request.body);
   if (!result.success) {
     return reply.status(400).send(createValidationError(request, createFastifyValidationError(result.error)));
   }

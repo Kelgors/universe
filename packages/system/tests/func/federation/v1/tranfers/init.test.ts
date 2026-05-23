@@ -215,6 +215,7 @@ describe("Federation Transfers Init", () => {
         playerId: "00000000-0000-4000-8000-000000000000",
         timestamp: expect.any(String),
       },
+      nodeId: "00000000-0000-4000-8000-000000000000",
       signature: expect.any(String),
     });
   });

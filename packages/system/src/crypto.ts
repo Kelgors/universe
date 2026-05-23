@@ -1,22 +1,28 @@
 import { type KeyObject, sign, verify } from "node:crypto";
-import z from "zod";
+import z, { type ZodType } from "zod";
+import type { Configuration } from "./configuration.js";
 
-export const signedMessageSchema = z.object({
-  message: z.unknown(),
-  signature: z.string(),
-});
-export type SignedMessage = z.infer<typeof signedMessageSchema>;
+export type SignedMessage<T = unknown> = {
+  message: T;
+  nodeId: string;
+  signature: string;
+};
 
-export const identifiedSignedMessageSchema = z.object({
-  ...signedMessageSchema.shape,
-  nodeId: z.string(),
-});
-export type IdentifiedSignedMessage = z.infer<typeof identifiedSignedMessageSchema>;
+export function createSignedMessageSchema<T = unknown>(payload: ZodType<T>): ZodType<SignedMessage<T>> {
+  return z.object({
+    message: payload,
+    nodeId: z.string(),
+    signature: z.string(),
+  });
+}
 
-export function createSignedMessage<T = unknown>(message: T, privateKey: KeyObject): { message: T; signature: string } {
+export function createSignedMessage<T = unknown>(
+  message: T,
+  { privateKey, nodeId }: Pick<Configuration, "privateKey" | "nodeId">,
+): SignedMessage {
   const messageString = JSON.stringify(message);
   const signature = sign(null, Buffer.from(messageString, "utf-8"), { key: privateKey }).toString("hex");
-  return { message, signature };
+  return { message, nodeId, signature };
 }
 
 export function isSignatureOk(message: unknown, signature: string, publicKey: KeyObject): boolean {
