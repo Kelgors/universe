@@ -41,6 +41,15 @@ const schema = {
   }),
 };
 
+async function rejectTransfer(requestId: string, transferId: string) {
+  await prisma.federationPlayerTransfer.update({
+    where: { requestId: requestId, id: transferId },
+    data: {
+      state: FederationPlayerTransferState.REJECTED_BY_TARGET_AT_SNAPSHOT,
+    },
+  });
+}
+
 export default (fastify: FastifyZodInstance) => {
   fastify.route({
     method: "POST",
@@ -68,17 +77,20 @@ export default (fastify: FastifyZodInstance) => {
 
       const sha256 = hash("sha256", message.snapshot);
       if (sha256 !== message.snapshotHash) {
+        await rejectTransfer(message.requestId, message.transferId);
         return snapshotHashNotMatch(reply);
       }
 
       const rawJson = Buffer.from(message.snapshot, "base64").toString();
       const jsonResult = safeParse(rawJson);
       if (!jsonResult.success) {
+        await rejectTransfer(message.requestId, message.transferId);
         return snapshotParseError(reply);
       }
 
       const result = z.unknown().safeParse(jsonResult.data);
       if (!result.success) {
+        await rejectTransfer(message.requestId, message.transferId);
         return reply.status(400).send(createValidationError(request, createFastifyValidationError(result.error)));
       }
 
