@@ -1,4 +1,4 @@
-import { hash, sign } from "node:crypto";
+import { sign } from "node:crypto";
 import { FederationPlayerTransferState } from "../../../../../src/generated/prisma/enums.js";
 import { prisma } from "../../../../../src/prisma.js";
 import { createServer } from "../../../../../src/server.js";
@@ -6,7 +6,7 @@ import { mockConfig, mockFederationTransfer, NODE2_IDENTITY } from "../../../../
 
 export const PLAYER1_BASE64_SNAPSHOT =
   "ewogICAgImluZGV4IjogMCwKICAgICJndWlkIjogIjkzMzdiZGNkLWQ3OTYtNGUxZC1iNmM0LTc5Y2EzM2Q0NWYwMiIsCiAgICAiaXNBY3RpdmUiOiB0cnVlLAogICAgImJhbGFuY2UiOiAiJDIsODM1LjMyIiwKICAgICJhZ2UiOiAzNSwKICAgICJmcmllbmRzIjogWwogICAgICB7CiAgICAgICAgImlkIjogMCwKICAgICAgICAibmFtZSI6ICJUd2lsYSBPbGl2ZXIiCiAgICAgIH0sCiAgICAgIHsKICAgICAgICAiaWQiOiAxLAogICAgICAgICJuYW1lIjogIkNoYXJpdHkgTWlsZXMiCiAgICAgIH0sCiAgICAgIHsKICAgICAgICAiaWQiOiAyLAogICAgICAgICJuYW1lIjogIkNocmlzIEJ1cmdlc3MiCiAgICAgIH0KICAgIF0sCiAgICAiZ3JlZXRpbmciOiAiSGVsbG8sIEx1ZWxsYSBHcmFoYW0hIFlvdSBoYXZlIDQgdW5yZWFkIG1lc3NhZ2VzLiIsCiAgICAiZmF2b3JpdGVGcnVpdCI6ICJiYW5hbmEiCiAgfQ==";
-export const PLAYER1_BASE64_SNAPSHOT_HASH = hash("sha256", PLAYER1_BASE64_SNAPSHOT);
+export const PLAYER1_BASE64_SNAPSHOT_HASH = "ede98e1145e1041f14d39314cfbdf63e7bfd746dd591ef69eae5a2f17a922ac4";
 
 describe("Federation Transfers Snapshot", () => {
   it("should be a 400 when there is no body", async () => {
@@ -99,7 +99,7 @@ describe("Federation Transfers Snapshot", () => {
     });
 
     expect(response.statusCode).toBe(400);
-    expect(response.json()).toMatchSnapshot();
+    expect(response.json()).toEqual({ error: "Message out of acceptable time range" });
   });
 
   it("should send status 404 when there is no transfer initiated", async () => {
@@ -159,15 +159,19 @@ describe("Federation Transfers Snapshot", () => {
     expect(response.json()).toEqual({ error: "Transfer is not approved by target" });
   });
 
-  it("should send status 409 when requestId already exists", async () => {
-    await prisma.federationPlayerTransfer.create({ data: mockFederationTransfer() });
+  it("should send status 400 when hash does not match the snapshot", async () => {
+    const mockTransfer = mockFederationTransfer({
+      id: "00000000-0000-4000-8000-000000000001",
+      state: FederationPlayerTransferState.APPROVED_BY_TARGET,
+    });
+    const dbTransfer = await prisma.federationPlayerTransfer.create({ data: mockTransfer });
 
     const server = createServer(mockConfig());
     const message = {
-      requestId: "00000000-0000-4000-8000-000000000000",
-      sourceSystemId: "00000000-0000-4000-8000-000000000001",
-      targetSystemId: "00000000-0000-4000-8000-000000000000",
-      playerId: "00000000-0000-4000-8000-000000000000",
+      requestId: mockTransfer.requestId,
+      transferId: dbTransfer.id,
+      snapshot: PLAYER1_BASE64_SNAPSHOT,
+      snapshotHash: "73475cb40a568e8da8a045ced110137e159f890ac4da883b6b17dc651b3a8049",
       timestamp: "2026-01-01T00:00:00.000Z",
     };
     const response = await server.inject({
@@ -182,19 +186,26 @@ describe("Federation Transfers Snapshot", () => {
       },
     });
 
-    expect(response.statusCode).toBe(409);
-    expect(response.json()).toEqual({ error: "Transfer with the same requestId already exists" });
+    expect(response.statusCode).toBe(400);
+    expect(response.json()).toEqual({ error: "Snapshot hash does not match" });
   });
 
   it("should send status 200", async () => {
+    const mockTransfer = mockFederationTransfer({
+      id: "00000000-0000-4000-8000-000000000001",
+      state: FederationPlayerTransferState.APPROVED_BY_TARGET,
+    });
+    const dbTransfer = await prisma.federationPlayerTransfer.create({ data: mockTransfer });
+
     const server = createServer(mockConfig());
     const message = {
-      requestId: "00000000-0000-4000-8000-000000000000",
-      sourceSystemId: "00000000-0000-4000-8000-000000000001",
-      targetSystemId: "00000000-0000-4000-8000-000000000000",
-      playerId: "00000000-0000-4000-8000-000000000000",
+      requestId: mockTransfer.requestId,
+      transferId: dbTransfer.id,
+      snapshot: PLAYER1_BASE64_SNAPSHOT,
+      snapshotHash: PLAYER1_BASE64_SNAPSHOT_HASH,
       timestamp: "2026-01-01T00:00:00.000Z",
     };
+
     const response = await server.inject({
       method: "POST",
       url: "/federation/v1/transfers/snapshot",
@@ -207,30 +218,25 @@ describe("Federation Transfers Snapshot", () => {
       },
     });
 
-    expect(response.statusCode).toBe(200);
-    expect(response.json()).toEqual({
-      message: {
-        id: expect.any(String),
-        requestId: "00000000-0000-4000-8000-000000000000",
-        sourceSystemId: "00000000-0000-4000-8000-000000000001",
-        targetSystemId: "00000000-0000-4000-8000-000000000000",
-        playerId: "00000000-0000-4000-8000-000000000000",
-        timestamp: expect.any(String),
-      },
-      nodeId: "00000000-0000-4000-8000-000000000000",
-      signature: expect.any(String),
-    });
+    expect(response.statusCode).toBe(204);
   });
 
   it("should save the message in the event log", async () => {
+    const mockTransfer = mockFederationTransfer({
+      id: "00000000-0000-4000-8000-000000000001",
+      state: FederationPlayerTransferState.APPROVED_BY_TARGET,
+    });
+    const dbTransfer = await prisma.federationPlayerTransfer.create({ data: mockTransfer });
+
     const server = createServer(mockConfig());
     const message = {
-      requestId: "00000000-0000-4000-8000-000000000000",
-      sourceSystemId: "00000000-0000-4000-8000-000000000001",
-      targetSystemId: "00000000-0000-4000-8000-000000000000",
-      playerId: "00000000-0000-4000-8000-000000000000",
+      transferId: dbTransfer.id,
+      requestId: mockTransfer.requestId,
+      snapshot: PLAYER1_BASE64_SNAPSHOT,
+      snapshotHash: PLAYER1_BASE64_SNAPSHOT_HASH,
       timestamp: "2026-01-01T00:00:00.000Z",
     };
+
     const signature = sign(null, Buffer.from(JSON.stringify(message), "utf-8"), {
       key: NODE2_IDENTITY.privateKey,
     }).toString("hex");
@@ -245,11 +251,11 @@ describe("Federation Transfers Snapshot", () => {
       },
     });
 
-    expect(response.statusCode).toBe(200);
+    expect(response.statusCode).toBe(204);
     await expect(
       prisma.federationEvent.findFirst({
         where: {
-          eventType: "FEDERATION_TRANSFER_INIT",
+          eventType: "FEDERATION_TRANSFER_SNAPSHOT",
           nodeId: "00000000-0000-4000-8000-000000000001",
           payload: { equals: JSON.stringify(message) },
           signature: signature,

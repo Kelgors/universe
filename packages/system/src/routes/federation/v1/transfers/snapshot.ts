@@ -23,7 +23,7 @@ const schema = {
       requestId: z.uuid(),
       snapshot: z.base64(),
       snapshotHash: z.hash("sha256"),
-      timestamp: z.date(),
+      timestamp: z.coerce.date(),
     }),
   ),
 };
