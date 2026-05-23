@@ -26,6 +26,7 @@ model FederationPlayerTransfer {
   requestId      String
   playerId       String
   state          FederationPlayerTransferState
+  cause          String?
   sourceSystemId String
   targetSystemId String
   snapshot       Json?

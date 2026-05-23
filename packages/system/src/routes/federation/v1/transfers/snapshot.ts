@@ -41,11 +41,12 @@ const schema = {
   }),
 };
 
-async function rejectTransfer(requestId: string, transferId: string) {
+async function rejectTransfer(requestId: string, transferId: string, cause: string) {
   await prisma.federationPlayerTransfer.update({
     where: { requestId: requestId, id: transferId },
     data: {
       state: FederationPlayerTransferState.REJECTED_BY_TARGET_AT_SNAPSHOT,
+      cause,
     },
   });
 }
@@ -77,20 +78,20 @@ export default (fastify: FastifyZodInstance) => {
 
       const sha256 = hash("sha256", message.snapshot);
       if (sha256 !== message.snapshotHash) {
-        await rejectTransfer(message.requestId, message.transferId);
+        await rejectTransfer(message.requestId, message.transferId, "Snapshot hash does not match");
         return snapshotHashNotMatch(reply);
       }
 
       const rawJson = Buffer.from(message.snapshot, "base64").toString();
       const jsonResult = safeParse(rawJson);
       if (!jsonResult.success) {
-        await rejectTransfer(message.requestId, message.transferId);
+        await rejectTransfer(message.requestId, message.transferId, "Snapshot JSON parse error");
         return snapshotParseError(reply);
       }
 
       const result = z.unknown().safeParse(jsonResult.data);
       if (!result.success) {
-        await rejectTransfer(message.requestId, message.transferId);
+        await rejectTransfer(message.requestId, message.transferId, "Snapshot schema parse error");
         return reply.status(400).send(createValidationError(request, createFastifyValidationError(result.error)));
       }
 

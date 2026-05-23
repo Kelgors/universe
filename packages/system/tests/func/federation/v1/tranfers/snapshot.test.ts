@@ -198,6 +198,7 @@ describe("Federation Transfers Snapshot", () => {
     });
 
     expect(dbTranfer?.state).toBe(FederationPlayerTransferState.REJECTED_BY_TARGET_AT_SNAPSHOT);
+    expect(dbTranfer?.cause).toBe("Snapshot hash does not match");
     expect(response.statusCode).toBe(400);
     expect(response.json()).toEqual({ error: "Snapshot hash does not match" });
   });
@@ -237,6 +238,7 @@ describe("Federation Transfers Snapshot", () => {
     });
 
     expect(dbTranfer?.state).toBe(FederationPlayerTransferState.REJECTED_BY_TARGET_AT_SNAPSHOT);
+    expect(dbTranfer?.cause).toBe("Snapshot JSON parse error");
     expect(response.statusCode).toBe(400);
     expect(response.json()).toEqual({ error: "Snapshot parse error" });
   });
