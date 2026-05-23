@@ -11,3 +11,4 @@ export const env = z
   .parse(process.env);
 
 export const startedAt = new Date();
+export const ACCEPTABLE_TIME_RANGE = 30 * 1000;
