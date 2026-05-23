@@ -8,10 +8,6 @@ export const PLAYER1_BASE64_SNAPSHOT =
   "ewogICAgImluZGV4IjogMCwKICAgICJndWlkIjogIjkzMzdiZGNkLWQ3OTYtNGUxZC1iNmM0LTc5Y2EzM2Q0NWYwMiIsCiAgICAiaXNBY3RpdmUiOiB0cnVlLAogICAgImJhbGFuY2UiOiAiJDIsODM1LjMyIiwKICAgICJhZ2UiOiAzNSwKICAgICJmcmllbmRzIjogWwogICAgICB7CiAgICAgICAgImlkIjogMCwKICAgICAgICAibmFtZSI6ICJUd2lsYSBPbGl2ZXIiCiAgICAgIH0sCiAgICAgIHsKICAgICAgICAiaWQiOiAxLAogICAgICAgICJuYW1lIjogIkNoYXJpdHkgTWlsZXMiCiAgICAgIH0sCiAgICAgIHsKICAgICAgICAiaWQiOiAyLAogICAgICAgICJuYW1lIjogIkNocmlzIEJ1cmdlc3MiCiAgICAgIH0KICAgIF0sCiAgICAiZ3JlZXRpbmciOiAiSGVsbG8sIEx1ZWxsYSBHcmFoYW0hIFlvdSBoYXZlIDQgdW5yZWFkIG1lc3NhZ2VzLiIsCiAgICAiZmF2b3JpdGVGcnVpdCI6ICJiYW5hbmEiCiAgfQ==";
 export const PLAYER1_BASE64_SNAPSHOT_HASH = "ede98e1145e1041f14d39314cfbdf63e7bfd746dd591ef69eae5a2f17a922ac4";
 
-export const PLAYER1_BASE64_SNAPSHOT_JSON_MALFORMED = "eyJhIjogfQ==";
-export const PLAYER1_BASE64_SNAPSHOT_JSON_MALFORMED_HASH =
-  "ebf138ac85cdddcd064eacdf7e22bd5f4a7b2064f522a49ef2b4dcdb861cd165";
-
 describe("Federation Transfers Snapshot", () => {
   it("should be a 400 when there is no body", async () => {
     const server = createServer(mockConfig());
@@ -214,8 +210,8 @@ describe("Federation Transfers Snapshot", () => {
     const message = {
       requestId: mockTransfer.requestId,
       transferId: dbTransfer.id,
-      snapshot: PLAYER1_BASE64_SNAPSHOT_JSON_MALFORMED,
-      snapshotHash: PLAYER1_BASE64_SNAPSHOT_JSON_MALFORMED_HASH,
+      snapshot: "eyJhIjogfQ==",
+      snapshotHash: "ebf138ac85cdddcd064eacdf7e22bd5f4a7b2064f522a49ef2b4dcdb861cd165",
       timestamp: "2026-01-01T00:00:00.000Z",
     };
     const response = await server.inject({
