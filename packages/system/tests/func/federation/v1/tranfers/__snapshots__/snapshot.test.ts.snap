@@ -1,0 +1,65 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`Federation Transfers Snapshot > should be a 400 when there is no body 1`] = `
+{
+  "details": {
+    "issues": [
+      {
+        "instancePath": "/",
+        "keyword": "invalid_type",
+        "message": "Invalid input: expected object, received undefined",
+        "params": {
+          "expected": "object",
+        },
+        "schemaPath": "#//invalid_type",
+      },
+    ],
+    "method": "POST",
+    "url": "/federation/v1/transfers/snapshot",
+  },
+  "error": "Response Validation Error",
+  "message": "Request doesn't match the schema",
+  "statusCode": 400,
+}
+`;
+
+exports[`Federation Transfers Snapshot > should send status 400 when fields in body are missing 1`] = `
+{
+  "details": {
+    "issues": [
+      {
+        "instancePath": "/message",
+        "keyword": "invalid_type",
+        "message": "Invalid input: expected nonoptional, received undefined",
+        "params": {
+          "expected": "nonoptional",
+        },
+        "schemaPath": "#/message/invalid_type",
+      },
+      {
+        "instancePath": "/nodeId",
+        "keyword": "invalid_type",
+        "message": "Invalid input: expected string, received undefined",
+        "params": {
+          "expected": "string",
+        },
+        "schemaPath": "#/nodeId/invalid_type",
+      },
+      {
+        "instancePath": "/signature",
+        "keyword": "invalid_type",
+        "message": "Invalid input: expected string, received undefined",
+        "params": {
+          "expected": "string",
+        },
+        "schemaPath": "#/signature/invalid_type",
+      },
+    ],
+    "method": "POST",
+    "url": "/federation/v1/transfers/snapshot",
+  },
+  "error": "Response Validation Error",
+  "message": "Request doesn't match the schema",
+  "statusCode": 400,
+}
+`;

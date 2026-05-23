@@ -2,6 +2,7 @@ import { generateKeyPair } from "node:crypto";
 import { promisify } from "node:util";
 import type { Configuration } from "../src/configuration.js";
 import { FederationPlayerTransferState } from "../src/generated/prisma/enums.js";
+import type { FederationPlayerTransferCreateInput } from "../src/generated/prisma/models.js";
 import type { FastifyZodInstance } from "../src/types.js";
 
 export const NODE1_IDENTITY = await promisify(generateKeyPair)("ed25519");
@@ -30,12 +31,13 @@ export function mockConfig(override?: Partial<Configuration>): Configuration {
   };
 }
 
-export function mockFederationTransfer() {
+export function mockFederationTransfer(override?: Partial<FederationPlayerTransferCreateInput>) {
   return {
     requestId: "00000000-0000-4000-8000-000000000000",
     sourceSystemId: "00000000-0000-4000-8000-000000000001",
     targetSystemId: "00000000-0000-4000-8000-000000000000",
     playerId: "00000000-0000-4000-8000-000000000000",
     state: FederationPlayerTransferState.APPROVED_BY_TARGET,
+    ...override,
   };
 }
