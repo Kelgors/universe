@@ -1,3 +1,4 @@
+import type { FastifyInstance } from "fastify";
 import z from "zod";
 import type { Configuration } from "../../../../configuration.js";
 import { createSignedMessage } from "../../../../crypto.js";
@@ -9,13 +10,13 @@ import {
   validationError,
 } from "../../../../errors/replies.js";
 import { FederationPlayerTransferState } from "../../../../generated/prisma/enums.js";
-import { PayloadError, type SignedMessage } from "../../../../generated/universe/federation/v1/base.js";
+import type { SignedMessage } from "../../../../generated/universe/federation/v1/base.js";
 import { TransferInitRequest, TransferInitResponse } from "../../../../generated/universe/federation/v1/transfers.js";
 import { isMessageExpired } from "../../../../helpers/isMessageExpired.js";
+import { safeDecode } from "../../../../helpers/protobuf.js";
 import { parseSignedMessage } from "../../../../middlewares/parseSignedMessage.js";
 import { saveFederationEvent } from "../../../../middlewares/saveFederationEvent.js";
 import { prisma } from "../../../../prisma.js";
-import type { FastifyZodInstance } from "../../../../types.js";
 
 const payloadSchema = z.object({
   requestId: z.uuid(),
@@ -25,7 +26,7 @@ const payloadSchema = z.object({
   timestamp: z.number(),
 });
 
-export default (fastify: FastifyZodInstance) => {
+export default (fastify: FastifyInstance) => {
   fastify.route({
     method: "POST",
     url: "/federation/v1/transfers/init",
@@ -33,10 +34,10 @@ export default (fastify: FastifyZodInstance) => {
     handler: async (request, reply) => {
       const config = request.getDecorator<Configuration>("config");
       const { nodeId: sourceNodeId, payload } = request.getDecorator<SignedMessage>("message");
-      const message = TransferInitRequest.decode(payload);
 
-      const parseResult = payloadSchema.safeParse(message);
+      const parseResult = safeDecode(TransferInitRequest, payload, payloadSchema);
       if (!parseResult.success) return validationError(reply, parseResult.error);
+      const message = parseResult.data;
 
       if (isMessageExpired(message.timestamp)) {
         return outdatedMessageError(reply, message.timestamp);

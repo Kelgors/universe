@@ -1,4 +1,5 @@
 import { hash } from "node:crypto";
+import type { FastifyInstance } from "fastify";
 import z from "zod";
 import {
   outdatedMessageError,
@@ -14,7 +15,6 @@ import { isMessageExpired } from "../../../../helpers/isMessageExpired.js";
 import { parseSignedMessage } from "../../../../middlewares/parseSignedMessage.js";
 import { saveFederationEvent } from "../../../../middlewares/saveFederationEvent.js";
 import { prisma } from "../../../../prisma.js";
-import type { FastifyZodInstance } from "../../../../types.js";
 
 const requestBodySchema = z.object({
   requestId: z.uuid(),
@@ -34,7 +34,7 @@ async function rejectTransfer(requestId: string, transferId: string, cause: stri
   });
 }
 
-export default (fastify: FastifyZodInstance) => {
+export default (fastify: FastifyInstance) => {
   fastify.route({
     method: "POST",
     url: "/federation/v1/transfers/snapshot",

@@ -1,24 +1,11 @@
 import { verify } from "node:crypto";
 import type { FastifyReply, FastifyRequest } from "fastify";
-import { type ZodType, z } from "zod";
+import { z } from "zod";
 import type { Configuration } from "../configuration.js";
 import { createSignedMessage } from "../crypto.js";
-import { type MessageFns, PayloadError, SignedMessage } from "../generated/universe/federation/v1/base.js";
-
-type SafeDecodeResult<T> = { success: true; data: T } | { success: false; error: string };
-function safeDecode<T>(Message: MessageFns<T>, buffer: Buffer, schema: ZodType<T>): SafeDecodeResult<T> {
-  try {
-    return { success: true, data: schema.parse(Message.decode(buffer)) };
-  } catch (error) {
-    if (error instanceof z.ZodError) {
-      return { success: false, error: z.prettifyError(error) };
-    }
-    if (error instanceof Error) {
-      return { success: false, error: error.message };
-    }
-    return { success: false, error: "Unknown error" };
-  }
-}
+import { validationError } from "../errors/replies.js";
+import { PayloadError, SignedMessage } from "../generated/universe/federation/v1/base.js";
+import { safeDecode } from "../helpers/protobuf.js";
 
 const signedMessageSchema = z.object({
   nodeId: z.uuid(),
@@ -51,19 +38,7 @@ export const parseSignedMessage = async (request: FastifyRequest, reply: Fastify
 
   const result = safeDecode(SignedMessage, request.body, signedMessageSchema);
   if (!result.success) {
-    return reply
-      .status(400)
-      .header("content-type", "application/octet-stream")
-      .send(
-        createSignedMessage(
-          PayloadError.encode({
-            error: "Invalid message format",
-            details: result.error,
-            timestamp: Date.now(),
-          }).finish(),
-          config,
-        ),
-      );
+    return validationError(reply, result.error, "Invalid message format");
   }
   const message = result.data;
   const node = config.trustedPeers.find((peer) => peer.nodeId === message.nodeId);

@@ -1,14 +1,15 @@
 import type { FastifyReply } from "fastify";
-import z, { type ZodError } from "zod";
+import z, { ZodError } from "zod";
 import { createSignedMessage } from "../crypto.js";
 import { PayloadError } from "../generated/universe/federation/v1/base.js";
 
-export function validationError(reply: FastifyReply, error: ZodError) {
+export function validationError(reply: FastifyReply, error: unknown, message = "Invalid payload format") {
   return reply.status(400).send(
     createSignedMessage(
       PayloadError.encode({
-        error: "Invalid payload format",
-        details: z.prettifyError(error),
+        error: message,
+        details:
+          error instanceof ZodError ? z.prettifyError(error) : error instanceof Error ? error.message : String(error),
         timestamp: Date.now(),
       }).finish(),
       reply.request.getDecorator("config"),
@@ -102,6 +103,17 @@ export function snapshotParseError(reply: FastifyReply) {
     .send(
       createSignedMessage(
         PayloadError.encode({ error: "Snapshot parse error", timestamp: Date.now() }).finish(),
+        reply.request.getDecorator("config"),
+      ),
+    );
+}
+
+export function notImplemented(reply: FastifyReply) {
+  return reply
+    .status(501)
+    .send(
+      createSignedMessage(
+        PayloadError.encode({ error: "Not implemented", timestamp: Date.now() }).finish(),
         reply.request.getDecorator("config"),
       ),
     );
