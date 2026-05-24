@@ -1,234 +1,317 @@
-import { sign } from "node:crypto";
+import { sign, verify } from "node:crypto";
+import { createSignedEnveloppe } from "../../../../../src/crypto.js";
+import { FederationError, SignedEnveloppe } from "../../../../../src/generated/universe/federation/v1/base.js";
+import {
+  TransferInitRequest,
+  TransferInitResponse,
+} from "../../../../../src/generated/universe/federation/v1/transfers.js";
 import { prisma } from "../../../../../src/prisma.js";
 import { createServer } from "../../../../../src/server.js";
-import { mockConfig, mockFederationTransfer, NODE2_IDENTITY } from "../../../../mock.js";
+import { mockFederationTransfer, mockNode1Config, NODE2_IDENTITY } from "../../../../mock.js";
 
 describe("Federation Transfers Init", () => {
-  it("should be a 400 when there is no body", async () => {
-    const server = createServer(mockConfig());
+  it("should be a 400 when there is no content type", async () => {
+    const server = createServer(mockNode1Config());
     const response = await server.inject({
       method: "POST",
       url: "/federation/v1/transfers/init",
     });
 
+    expect(response.headers).toHaveProperty("content-type", "application/octet-stream");
+    const enveloppe = SignedEnveloppe.decode(response.rawPayload);
+    expect(verify(null, enveloppe.message, { key: mockNode1Config().privateKey }, enveloppe.signature)).toBe(true);
+    expect(enveloppe).toHaveProperty("nodeId", mockNode1Config().nodeId);
+
+    expect(FederationError.decode(enveloppe.message)).toHaveProperty("code", "Invalid content type");
     expect(response.statusCode).toBe(400);
-    expect(response.json()).toMatchSnapshot();
   });
 
-  it("should send status 400 when fields in body are missing", async () => {
-    const server = createServer(mockConfig());
+  it("should send status 400 when body is empty", async () => {
+    const server = createServer(mockNode1Config());
     const response = await server.inject({
       method: "POST",
       url: "/federation/v1/transfers/init",
-      body: {},
+      body: Buffer.alloc(0),
+      headers: { "content-type": "application/octet-stream" },
     });
 
+    expect(response.headers).toHaveProperty("content-type", "application/octet-stream");
+    const enveloppe = SignedEnveloppe.decode(response.rawPayload);
+    expect(verify(null, enveloppe.message, { key: mockNode1Config().privateKey }, enveloppe.signature)).toBe(true);
+    expect(enveloppe).toHaveProperty("nodeId", mockNode1Config().nodeId);
+
+    expect(FederationError.decode(enveloppe.message)).toHaveProperty("code", "Missing raw body");
     expect(response.statusCode).toBe(400);
-    expect(response.json()).toMatchSnapshot();
+  });
+
+  it("should send status 400 when this is not a signed message", async () => {
+    const server = createServer(mockNode1Config());
+    const response = await server.inject({
+      method: "POST",
+      url: "/federation/v1/transfers/init",
+      body: Buffer.from("this is not a signed message", "utf-8"),
+      headers: { "content-type": "application/octet-stream" },
+    });
+
+    expect(response.headers).toHaveProperty("content-type", "application/octet-stream");
+
+    const enveloppe = SignedEnveloppe.decode(response.rawPayload);
+    expect(verify(null, enveloppe.message, { key: mockNode1Config().privateKey }, enveloppe.signature)).toBe(true);
+    expect(enveloppe).toHaveProperty("nodeId", mockNode1Config().nodeId);
+
+    expect(FederationError.decode(enveloppe.message)).toEqual({
+      code: "Invalid enveloppe format",
+      details: "✖ Invalid UUID\n  → at nodeId",
+      timestamp: 1767225600000,
+    });
+    expect(response.statusCode).toBe(400);
   });
 
   it("should send status 401 when nodeId is not trusted", async () => {
-    const server = createServer(mockConfig());
+    const server = createServer(mockNode1Config());
     const response = await server.inject({
       method: "POST",
       url: "/federation/v1/transfers/init",
-      body: {
-        message: {
-          requestId: "00000000-0000-4000-8000-000000000000",
-          sourceSystemId: "00000000-0000-4000-8000-000000000001",
-          targetSystemId: "2f0e3690-2888-4f02-807c-ec0b93506234",
-          playerId: "00000000-0000-4000-8000-000000000000",
-          timestamp: "2026-01-01T00:00:00.000Z",
-        },
-        nodeId: "2f0e3690-2888-4f02-807c-ec0b93506234",
-        signature: "",
-      },
+      body: createSignedEnveloppe(Buffer.from("test", "utf-8"), {
+        privateKey: NODE2_IDENTITY.privateKey,
+        nodeId: "00000000-0000-4000-8000-000000000123",
+      }),
+      headers: { "content-type": "application/octet-stream" },
     });
 
+    expect(response.headers).toHaveProperty("content-type", "application/octet-stream");
+    const enveloppe = SignedEnveloppe.decode(response.rawPayload);
+    expect(verify(null, enveloppe.message, { key: mockNode1Config().privateKey }, enveloppe.signature)).toBe(true);
+    expect(enveloppe).toHaveProperty("nodeId", mockNode1Config().nodeId);
+
+    expect(FederationError.decode(enveloppe.message)).toEqual({ code: "Unknown node ID", timestamp: 1767225600000 });
     expect(response.statusCode).toBe(401);
-    expect(response.json()).toEqual({ error: "Unrecognized node ID" });
   });
 
   it("should send status 401 when signature is bad", async () => {
-    const server = createServer(mockConfig());
+    const server = createServer(mockNode1Config());
     const response = await server.inject({
       method: "POST",
       url: "/federation/v1/transfers/init",
-      body: {
-        message: {
-          requestId: "00000000-0000-4000-8000-000000000000",
-          sourceSystemId: "00000000-0000-4000-8000-000000000001",
-          targetSystemId: "00000000-0000-4000-8000-000000000000",
-          playerId: "00000000-0000-4000-8000-000000000000",
-          timestamp: "2026-01-01T00:00:00.000Z",
-        },
-        nodeId: "00000000-0000-4000-8000-000000000001",
-        signature: "invalid-signature",
-      },
+      body: Buffer.from(
+        SignedEnveloppe.encode({
+          message: Buffer.from(
+            TransferInitRequest.encode({
+              requestId: "00000000-0000-4000-8000-000000000000",
+              sourceSystemId: "00000000-0000-4000-8000-000000000002",
+              targetSystemId: "00000000-0000-4000-8000-000000000000",
+              playerId: "00000000-0000-4000-8000-000000000000",
+              timestamp: new Date("2026-01-01T00:00:00.000Z").getTime(),
+            }).finish(),
+          ),
+          nodeId: "00000000-0000-4000-8000-000000000002",
+          signature: Buffer.from("invalid-signature", "utf-8"),
+        }).finish(),
+      ),
+      headers: { "content-type": "application/octet-stream" },
     });
 
+    expect(response.headers).toHaveProperty("content-type", "application/octet-stream");
+    const enveloppe = SignedEnveloppe.decode(response.rawPayload);
+    expect(verify(null, enveloppe.message, { key: mockNode1Config().privateKey }, enveloppe.signature)).toBe(true);
+    expect(enveloppe).toHaveProperty("nodeId", mockNode1Config().nodeId);
+
+    expect(FederationError.decode(enveloppe.message)).toEqual({ code: "Invalid signature", timestamp: 1767225600000 });
     expect(response.statusCode).toBe(401);
-    expect(response.json()).toEqual({ error: "Invalid signature" });
   });
 
-  it("should send status 400 when message is not valid", async () => {
-    await prisma.federationPlayerTransfer.create({ data: mockFederationTransfer() });
-
-    const server = createServer(mockConfig());
-    const message = {
-      requestId: "00000000-0000-4000-8000-000000000000",
-      timestamp: "2026-01-01T00:00:00.000Z",
-    };
+  it("should send status 400 when payload is not valid", async () => {
+    const server = createServer(mockNode1Config());
     const response = await server.inject({
       method: "POST",
       url: "/federation/v1/transfers/init",
-      body: {
-        message: message,
-        nodeId: "00000000-0000-4000-8000-000000000001",
-        signature: sign(null, Buffer.from(JSON.stringify(message), "utf-8"), {
-          key: NODE2_IDENTITY.privateKey,
-        }).toString("hex"),
-      },
+      body: createSignedEnveloppe(
+        TransferInitRequest.encode({
+          requestId: "00000000-0000-4000-8000-000000000000",
+          sourceSystemId: "00000000-0000-4000-8000-000000000002",
+          targetSystemId: "00000000-0000-4000-8000-000000000001",
+          playerId: "jaimelepaté",
+          timestamp: new Date("2026-01-01T00:00:00.000Z").getTime(),
+        }).finish(),
+        {
+          privateKey: NODE2_IDENTITY.privateKey,
+          nodeId: "00000000-0000-4000-8000-000000000002",
+        },
+      ),
+      headers: { "content-type": "application/octet-stream" },
     });
 
+    expect(response.headers).toHaveProperty("content-type", "application/octet-stream");
+    const enveloppe = SignedEnveloppe.decode(response.rawPayload);
+    expect(verify(null, enveloppe.message, { key: mockNode1Config().privateKey }, enveloppe.signature)).toBe(true);
+    expect(enveloppe).toHaveProperty("nodeId", mockNode1Config().nodeId);
+
+    expect(FederationError.decode(enveloppe.message)).toEqual({
+      details: "✖ Invalid UUID\n  → at playerId",
+      code: "Invalid message format",
+      timestamp: 1767225600000,
+    });
     expect(response.statusCode).toBe(400);
-    expect(response.json()).toMatchSnapshot();
   });
 
   it("should send status 400 when source system is not the one initiating the transfer", async () => {
-    const server = createServer(mockConfig());
-    const message = {
-      requestId: "00000000-0000-4000-8000-000000000000",
-      sourceSystemId: "00000000-0000-4000-8000-000000000003",
-      targetSystemId: "00000000-0000-4000-8000-000000000000",
-      playerId: "00000000-0000-4000-8000-000000000000",
-      timestamp: "2026-01-01T00:00:00.000Z",
-    };
+    const server = createServer(mockNode1Config());
     const response = await server.inject({
       method: "POST",
       url: "/federation/v1/transfers/init",
-      body: {
-        message: message,
-        nodeId: "00000000-0000-4000-8000-000000000001",
-        signature: sign(null, Buffer.from(JSON.stringify(message), "utf-8"), {
-          key: NODE2_IDENTITY.privateKey,
-        }).toString("hex"),
-      },
+      body: createSignedEnveloppe(
+        TransferInitRequest.encode({
+          requestId: "00000000-0000-4000-8000-000000000000",
+          sourceSystemId: "00000000-0000-4000-8000-000000000003",
+          targetSystemId: "00000000-0000-4000-8000-000000000000",
+          playerId: "00000000-0000-4000-8000-000000000000",
+          timestamp: new Date("2026-01-01T00:00:00.000Z").getTime(),
+        }).finish(),
+        {
+          privateKey: NODE2_IDENTITY.privateKey,
+          nodeId: "00000000-0000-4000-8000-000000000002",
+        },
+      ),
+      headers: { "content-type": "application/octet-stream" },
     });
 
+    expect(response.headers).toHaveProperty("content-type", "application/octet-stream");
+    const enveloppe = SignedEnveloppe.decode(response.rawPayload);
+    expect(verify(null, enveloppe.message, { key: mockNode1Config().privateKey }, enveloppe.signature)).toBe(true);
+    expect(enveloppe).toHaveProperty("nodeId", mockNode1Config().nodeId);
+
+    expect(FederationError.decode(enveloppe.message)).toEqual({
+      code: "Only source system can initiate transfer",
+      timestamp: 1767225600000,
+    });
     expect(response.statusCode).toBe(400);
-    expect(response.json()).toEqual({ error: "Only source system can initiate transfer" });
   });
 
   it("should send status 400 when target system is not the one accepting the transfer", async () => {
-    const server = createServer(mockConfig());
-    const message = {
-      requestId: "00000000-0000-4000-8000-000000000000",
-      sourceSystemId: "00000000-0000-4000-8000-000000000001",
-      targetSystemId: "00000000-0000-4000-8000-000000000003",
-      playerId: "00000000-0000-4000-8000-000000000000",
-      timestamp: "2026-01-01T00:00:00.000Z",
-    };
+    const server = createServer(mockNode1Config());
     const response = await server.inject({
       method: "POST",
       url: "/federation/v1/transfers/init",
-      body: {
-        message: message,
-        nodeId: "00000000-0000-4000-8000-000000000001",
-        signature: sign(null, Buffer.from(JSON.stringify(message), "utf-8"), {
-          key: NODE2_IDENTITY.privateKey,
-        }).toString("hex"),
-      },
+      body: createSignedEnveloppe(
+        TransferInitRequest.encode({
+          requestId: "00000000-0000-4000-8000-000000000000",
+          sourceSystemId: "00000000-0000-4000-8000-000000000002",
+          targetSystemId: "00000000-0000-4000-8000-000000000003",
+          playerId: "00000000-0000-4000-8000-000000000000",
+          timestamp: new Date("2026-01-01T00:00:00.000Z").getTime(),
+        }).finish(),
+        {
+          privateKey: NODE2_IDENTITY.privateKey,
+          nodeId: "00000000-0000-4000-8000-000000000002",
+        },
+      ),
+      headers: { "content-type": "application/octet-stream" },
     });
 
+    expect(response.headers).toHaveProperty("content-type", "application/octet-stream");
+    const enveloppe = SignedEnveloppe.decode(response.rawPayload);
+    expect(verify(null, enveloppe.message, { key: mockNode1Config().privateKey }, enveloppe.signature)).toBe(true);
+    expect(enveloppe).toHaveProperty("nodeId", mockNode1Config().nodeId);
+
+    expect(FederationError.decode(enveloppe.message)).toEqual({
+      code: "Only target system can accept transfer",
+      timestamp: 1767225600000,
+    });
     expect(response.statusCode).toBe(400);
-    expect(response.json()).toEqual({ error: "Only target system can accept transfer" });
   });
 
   it("should send status 409 when requestId already exists", async () => {
     await prisma.federationPlayerTransfer.create({ data: mockFederationTransfer() });
 
-    const server = createServer(mockConfig());
-    const message = {
-      requestId: "00000000-0000-4000-8000-000000000000",
-      sourceSystemId: "00000000-0000-4000-8000-000000000001",
-      targetSystemId: "00000000-0000-4000-8000-000000000000",
-      playerId: "00000000-0000-4000-8000-000000000000",
-      timestamp: "2026-01-01T00:00:00.000Z",
-    };
+    const server = createServer(mockNode1Config());
     const response = await server.inject({
       method: "POST",
       url: "/federation/v1/transfers/init",
-      body: {
-        message: message,
-        nodeId: "00000000-0000-4000-8000-000000000001",
-        signature: sign(null, Buffer.from(JSON.stringify(message), "utf-8"), {
-          key: NODE2_IDENTITY.privateKey,
-        }).toString("hex"),
-      },
+      body: createSignedEnveloppe(
+        TransferInitRequest.encode({
+          requestId: "00000000-0000-4000-8000-000000000000",
+          sourceSystemId: "00000000-0000-4000-8000-000000000002",
+          targetSystemId: "00000000-0000-4000-8000-000000000001",
+          playerId: "00000000-0000-4000-8000-000000000000",
+          timestamp: new Date("2026-01-01T00:00:00.000Z").getTime(),
+        }).finish(),
+        {
+          privateKey: NODE2_IDENTITY.privateKey,
+          nodeId: "00000000-0000-4000-8000-000000000002",
+        },
+      ),
+      headers: { "content-type": "application/octet-stream" },
     });
 
+    expect(response.headers).toHaveProperty("content-type", "application/octet-stream");
+    const enveloppe = SignedEnveloppe.decode(response.rawPayload);
+    expect(verify(null, enveloppe.message, { key: mockNode1Config().privateKey }, enveloppe.signature)).toBe(true);
+    expect(enveloppe).toHaveProperty("nodeId", mockNode1Config().nodeId);
+
+    expect(FederationError.decode(enveloppe.message)).toEqual({
+      code: "Transfer with the same requestId already exists",
+      timestamp: 1767225600000,
+    });
     expect(response.statusCode).toBe(409);
-    expect(response.json()).toEqual({ error: "Transfer with the same requestId already exists" });
   });
 
   it("should send status 200", async () => {
-    const server = createServer(mockConfig());
-    const message = {
-      requestId: "00000000-0000-4000-8000-000000000000",
-      sourceSystemId: "00000000-0000-4000-8000-000000000001",
-      targetSystemId: "00000000-0000-4000-8000-000000000000",
-      playerId: "00000000-0000-4000-8000-000000000000",
-      timestamp: "2026-01-01T00:00:00.000Z",
-    };
+    const server = createServer(mockNode1Config());
     const response = await server.inject({
       method: "POST",
       url: "/federation/v1/transfers/init",
-      body: {
-        message: message,
-        nodeId: "00000000-0000-4000-8000-000000000001",
-        signature: sign(null, Buffer.from(JSON.stringify(message), "utf-8"), {
-          key: NODE2_IDENTITY.privateKey,
-        }).toString("hex"),
-      },
+      body: createSignedEnveloppe(
+        TransferInitRequest.encode({
+          requestId: "00000000-0000-4000-8000-000000000000",
+          sourceSystemId: "00000000-0000-4000-8000-000000000002",
+          targetSystemId: "00000000-0000-4000-8000-000000000001",
+          playerId: "00000000-0000-4000-8000-000000000000",
+          timestamp: new Date("2026-01-01T00:00:00.000Z").getTime(),
+        }).finish(),
+        {
+          privateKey: NODE2_IDENTITY.privateKey,
+          nodeId: "00000000-0000-4000-8000-000000000002",
+        },
+      ),
+      headers: { "content-type": "application/octet-stream" },
     });
 
-    expect(response.statusCode).toBe(200);
-    expect(response.json()).toEqual({
-      message: {
-        id: expect.any(String),
-        requestId: "00000000-0000-4000-8000-000000000000",
-        sourceSystemId: "00000000-0000-4000-8000-000000000001",
-        targetSystemId: "00000000-0000-4000-8000-000000000000",
-        playerId: "00000000-0000-4000-8000-000000000000",
-        timestamp: expect.any(String),
-      },
-      nodeId: "00000000-0000-4000-8000-000000000000",
-      signature: expect.any(String),
+    expect(response.headers).toHaveProperty("content-type", "application/octet-stream");
+    const enveloppe = SignedEnveloppe.decode(response.rawPayload);
+    expect(verify(null, enveloppe.message, { key: mockNode1Config().privateKey }, enveloppe.signature)).toBe(true);
+    expect(enveloppe).toHaveProperty("nodeId", mockNode1Config().nodeId);
+
+    expect(TransferInitResponse.decode(enveloppe.message)).toEqual({
+      id: expect.any(String),
+      requestId: "00000000-0000-4000-8000-000000000000",
+      sourceSystemId: "00000000-0000-4000-8000-000000000002",
+      targetSystemId: "00000000-0000-4000-8000-000000000001",
+      playerId: "00000000-0000-4000-8000-000000000000",
+      timestamp: 1767225600000,
     });
+    expect(response.statusCode).toBe(200);
   });
 
   it("should save the message in the event log", async () => {
-    const server = createServer(mockConfig());
-    const message = {
+    const server = createServer(mockNode1Config());
+    const message = TransferInitRequest.encode({
       requestId: "00000000-0000-4000-8000-000000000000",
-      sourceSystemId: "00000000-0000-4000-8000-000000000001",
-      targetSystemId: "00000000-0000-4000-8000-000000000000",
+      sourceSystemId: "00000000-0000-4000-8000-000000000002",
+      targetSystemId: "00000000-0000-4000-8000-000000000001",
       playerId: "00000000-0000-4000-8000-000000000000",
-      timestamp: "2026-01-01T00:00:00.000Z",
-    };
-    const signature = sign(null, Buffer.from(JSON.stringify(message), "utf-8"), {
-      key: NODE2_IDENTITY.privateKey,
-    }).toString("hex");
-
+      timestamp: new Date("2026-01-01T00:00:00.000Z").getTime(),
+    }).finish();
+    const signature = sign(null, message, { key: NODE2_IDENTITY.privateKey });
+    const body = SignedEnveloppe.encode({
+      nodeId: "00000000-0000-4000-8000-000000000002",
+      message: Buffer.from(message),
+      signature: Buffer.from(signature),
+    }).finish();
     const response = await server.inject({
       method: "POST",
       url: "/federation/v1/transfers/init",
-      body: {
-        message: message,
-        nodeId: "00000000-0000-4000-8000-000000000001",
-        signature,
-      },
+      body: Buffer.from(body),
+      headers: { "content-type": "application/octet-stream" },
     });
 
     expect(response.statusCode).toBe(200);
@@ -236,9 +319,9 @@ describe("Federation Transfers Init", () => {
       prisma.federationEvent.findFirst({
         where: {
           eventType: "FEDERATION_TRANSFER_INIT",
-          nodeId: "00000000-0000-4000-8000-000000000001",
-          payload: { equals: JSON.stringify(message) },
-          signature: signature,
+          nodeId: "00000000-0000-4000-8000-000000000002",
+          message,
+          signature,
         },
       }),
     ).resolves.toHaveProperty("id");

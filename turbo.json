@@ -12,8 +12,8 @@
       "persistent": true,
       "cache": false
     },
-    "test:run": {
-      "dependsOn": ["^test:run"]
+    "test": {
+      "dependsOn": ["^test"]
     },
     "test:migrate": {
       "dependsOn": ["^test:migrate"],

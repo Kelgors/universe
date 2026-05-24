@@ -1,45 +1,40 @@
 import { hash } from "node:crypto";
+import type { FastifyInstance } from "fastify";
 import z from "zod";
-import { createSignedMessageSchema } from "../../../../crypto.js";
+import type { Configuration } from "../../../../configuration.js";
+import { createSignedEnveloppe } from "../../../../crypto.js";
 import {
-  createFastifyValidationError,
-  createValidationError,
-  mergeResponseValidationSchema as merge,
-} from "../../../../errors/handler.js";
-import {
+  outdatedMessageError,
   snapshotHashNotMatch,
-  snapshotParseError,
   transferNotApprovedByTarget,
   transferNotFound,
+  validationError,
 } from "../../../../errors/replies.js";
 import { FederationPlayerTransferState } from "../../../../generated/prisma/enums.js";
-import { safeParse } from "../../../../helpers/json.js";
+import type { SignedEnveloppe } from "../../../../generated/universe/federation/v1/base.js";
 import {
-  checkMessageTimestamp,
-  checkMessageTimestampResponses,
-} from "../../../../middlewares/checkMessageTimestamp.js";
-import { checkSignature, checkSignatureResponses } from "../../../../middlewares/checkSignature.js";
+  MobilePlayerData,
+  TransferSnapshotRequest,
+  TransferSnapshotResponse,
+} from "../../../../generated/universe/federation/v1/transfers.js";
+import { isMessageExpired } from "../../../../helpers/isMessageExpired.js";
+import { safeDecode } from "../../../../helpers/protobuf.js";
+import { parseSignedEnveloppe } from "../../../../middlewares/parseSignedEnveloppe.js";
 import { saveFederationEvent } from "../../../../middlewares/saveFederationEvent.js";
 import { prisma } from "../../../../prisma.js";
-import { defaultServerValidation, errorResponseSchema } from "../../../../schemas.js";
-import type { FastifyZodInstance } from "../../../../types.js";
 
-const schema = {
-  body: createSignedMessageSchema(
-    z.object({
-      transferId: z.uuid(),
-      requestId: z.uuid(),
-      snapshot: z.base64(),
-      snapshotHash: z.hash("sha256"),
-      timestamp: z.coerce.date(),
-    }),
-  ),
-  response: merge(defaultServerValidation, checkSignatureResponses, checkMessageTimestampResponses, {
-    204: z.undefined(),
-    400: errorResponseSchema,
-    404: errorResponseSchema,
-  }),
-};
+const messageSchema = z.object({
+  requestId: z.uuid(),
+  transferId: z.uuid(),
+  snapshotData: z.instanceof(Buffer),
+  snapshotHash: z.string(),
+  timestamp: z.number(),
+});
+
+const playerDataSchema = z.object({
+  playerId: z.uuid(),
+  playerName: z.string(),
+});
 
 async function rejectTransfer(requestId: string, transferId: string, cause: string) {
   await prisma.federationPlayerTransfer.update({
@@ -51,21 +46,28 @@ async function rejectTransfer(requestId: string, transferId: string, cause: stri
   });
 }
 
-export default (fastify: FastifyZodInstance) => {
+export default (fastify: FastifyInstance) => {
   fastify.route({
     method: "POST",
-    schema,
     url: "/federation/v1/transfers/snapshot",
-    preValidation: [checkSignature],
-    preHandler: [checkMessageTimestamp, saveFederationEvent("FEDERATION_TRANSFER_SNAPSHOT")],
+    preHandler: [parseSignedEnveloppe, saveFederationEvent("FEDERATION_TRANSFER_SNAPSHOT")],
     handler: async (request, reply) => {
-      const { message, nodeId: sourceNodeId } = request.body;
+      const config = request.getDecorator<Configuration>("config");
+      const enveloppe = request.getDecorator<SignedEnveloppe>("enveloppe");
+
+      const parseResult = safeDecode(TransferSnapshotRequest, enveloppe.message, messageSchema);
+      if (!parseResult.success) return validationError(reply, parseResult.error);
+      const message = parseResult.data;
+
+      if (isMessageExpired(message.timestamp)) {
+        return outdatedMessageError(reply, message.timestamp);
+      }
 
       const dbTranfer = await prisma.federationPlayerTransfer.findFirst({
         where: {
           requestId: message.requestId,
           id: message.transferId,
-          sourceSystemId: sourceNodeId,
+          sourceSystemId: enveloppe.nodeId,
         },
       });
       if (!dbTranfer) {
@@ -76,34 +78,36 @@ export default (fastify: FastifyZodInstance) => {
         return transferNotApprovedByTarget(reply);
       }
 
-      const sha256 = hash("sha256", message.snapshot);
+      const sha256 = hash("sha256", message.snapshotData);
       if (sha256 !== message.snapshotHash) {
         await rejectTransfer(message.requestId, message.transferId, "Snapshot hash does not match");
         return snapshotHashNotMatch(reply);
       }
 
-      const rawJson = Buffer.from(message.snapshot, "base64").toString();
-      const jsonResult = safeParse(rawJson);
-      if (!jsonResult.success) {
-        await rejectTransfer(message.requestId, message.transferId, "Snapshot JSON parse error");
-        return snapshotParseError(reply);
-      }
-
-      const result = z.unknown().safeParse(jsonResult.data);
+      const result = safeDecode(MobilePlayerData, message.snapshotData, playerDataSchema);
       if (!result.success) {
         await rejectTransfer(message.requestId, message.transferId, "Snapshot schema parse error");
-        return reply.status(400).send(createValidationError(request, createFastifyValidationError(result.error)));
+        return reply.status(400).send(validationError(reply, result.error));
       }
 
       await prisma.federationPlayerTransfer.update({
         where: { requestId: message.requestId, id: message.transferId },
         data: {
-          snapshot: rawJson,
+          snapshot: Uint8Array.from(message.snapshotData),
           state: FederationPlayerTransferState.SNAPSHOT_STAGED_BY_TARGET,
         },
       });
 
-      return reply.status(204).send();
+      return reply.status(200).send(
+        createSignedEnveloppe(
+          TransferSnapshotResponse.encode({
+            transferId: message.transferId,
+            requestId: message.requestId,
+            timestamp: Date.now(),
+          }).finish(),
+          config,
+        ),
+      );
     },
   });
 };

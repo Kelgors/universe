@@ -1,11 +1,12 @@
-import type { FastifyZodInstance } from "../../../../types.js";
+import type { FastifyInstance } from "fastify";
+import { notImplemented } from "../../../../errors/replies.js";
 
-export default (fastify: FastifyZodInstance) => {
+export default (fastify: FastifyInstance) => {
   fastify.route({
     method: "POST",
     url: "/federation/v1/transfers/commit",
     handler: async (_request, reply) => {
-      return reply.status(500).send({ error: "Not implemented" });
+      return notImplemented(reply);
     },
   });
 };

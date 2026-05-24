@@ -43,4 +43,4 @@ jobs:
         run: pnpm exec turbo test:migrate
 
       - name: Run tests
-        run: pnpm exec turbo test:run -- --passWithNoTests
+        run: pnpm exec turbo test -- --passWithNoTests

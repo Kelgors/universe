@@ -10,6 +10,7 @@
         "Prisma.prisma",
         "cweijan.vscode-postgresql-client2",
         "GitHub.vscode-github-actions",
+        "DrBlury.protobuf-vsc",
         "-dbaeumer.vscode-eslint"
       ],
       "settings": {
@@ -21,6 +22,7 @@
         "files.trimTrailingWhitespace": true,
         "editor.formatOnSave": true,
         "editor.codeActionsOnSave": {
+          "source.removeUnusedImports": "explicit",
           "source.fixAll.biome": "explicit"
         },
         "[typescript]": {

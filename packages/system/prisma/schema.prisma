@@ -29,7 +29,7 @@ model FederationPlayerTransfer {
   cause          String?
   sourceSystemId String
   targetSystemId String
-  snapshot       Json?
+  snapshot       Bytes?
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -41,8 +41,8 @@ model FederationEvent {
   id        String @id @default(uuid())
   nodeId    String
   eventType String
-  payload   Json
-  signature String
+  message   Bytes
+  signature Bytes
 
   createdAt DateTime @default(now())
 }

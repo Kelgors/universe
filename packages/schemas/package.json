@@ -9,8 +9,8 @@
     "check": "biome check",
     "build": "tsc -p tsconfig.build.json",
     "start": "node dist/index.js",
-    "test": "vitest",
-    "test:run": "vitest --run",
+    "test": "vitest run",
+    "test:watch": "vitest watch",
     "clean": "rm -rf dist"
   },
   "keywords": [],

@@ -1,5 +1,4 @@
-import fastify from "fastify";
-import { serializerCompiler, validatorCompiler } from "fastify-type-provider-zod";
+import fastify, { type FastifyRequest } from "fastify";
 import type { Configuration } from "./configuration.js";
 import { errorHandler } from "./errors/handler.js";
 import routes from "./routes/federation/v1/index.js";
@@ -10,9 +9,14 @@ export function createServer(config: Configuration) {
   });
   server.log.info("System public key: %s", config.publicKey.export({ format: "pem", type: "spki" }).toString());
 
-  server.setValidatorCompiler(validatorCompiler);
-  server.setSerializerCompiler(serializerCompiler);
+  server.addContentTypeParser(
+    "application/octet-stream",
+    { parseAs: "buffer" },
+    async (_req: FastifyRequest, body: Buffer) => body,
+  );
+
   server.decorateRequest("config", null);
+  server.decorateRequest("enveloppe", null);
   server.addHook("onRequest", async (req) => {
     req.setDecorator("config", config);
   });
