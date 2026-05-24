@@ -23,8 +23,7 @@
         "editor.formatOnSave": true,
         "editor.codeActionsOnSave": {
           "source.removeUnusedImports": "explicit",
-          "source.fixAll.biome": "explicit",
-          "source.organizeImports.biome": "explicit"
+          "source.fixAll.biome": "explicit"
         },
         "[typescript]": {
           "editor.defaultFormatter": "biomejs.biome"
