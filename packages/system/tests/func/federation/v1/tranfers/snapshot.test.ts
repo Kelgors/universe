@@ -11,10 +11,6 @@ import { prisma } from "../../../../../src/prisma.js";
 import { createServer } from "../../../../../src/server.js";
 import { mockFederationTransfer, mockNode1Config, mockNode2Config, NODE2_IDENTITY } from "../../../../mock.js";
 
-export const PLAYER1_BASE64_SNAPSHOT =
-  "ewogICAgImluZGV4IjogMCwKICAgICJndWlkIjogIjkzMzdiZGNkLWQ3OTYtNGUxZC1iNmM0LTc5Y2EzM2Q0NWYwMiIsCiAgICAiaXNBY3RpdmUiOiB0cnVlLAogICAgImJhbGFuY2UiOiAiJDIsODM1LjMyIiwKICAgICJhZ2UiOiAzNSwKICAgICJmcmllbmRzIjogWwogICAgICB7CiAgICAgICAgImlkIjogMCwKICAgICAgICAibmFtZSI6ICJUd2lsYSBPbGl2ZXIiCiAgICAgIH0sCiAgICAgIHsKICAgICAgICAiaWQiOiAxLAogICAgICAgICJuYW1lIjogIkNoYXJpdHkgTWlsZXMiCiAgICAgIH0sCiAgICAgIHsKICAgICAgICAiaWQiOiAyLAogICAgICAgICJuYW1lIjogIkNocmlzIEJ1cmdlc3MiCiAgICAgIH0KICAgIF0sCiAgICAiZ3JlZXRpbmciOiAiSGVsbG8sIEx1ZWxsYSBHcmFoYW0hIFlvdSBoYXZlIDQgdW5yZWFkIG1lc3NhZ2VzLiIsCiAgICAiZmF2b3JpdGVGcnVpdCI6ICJiYW5hbmEiCiAgfQ==";
-export const PLAYER1_BASE64_SNAPSHOT_HASH = "ede98e1145e1041f14d39314cfbdf63e7bfd746dd591ef69eae5a2f17a922ac4";
-
 describe("Federation Transfers Snapshot", () => {
   it("should be a 400 when there is no body", async () => {
     const server = await createServer(mockNode1Config());

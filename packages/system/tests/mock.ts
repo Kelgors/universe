@@ -1,14 +1,14 @@
 import { generateKeyPair } from "node:crypto";
 import { promisify } from "node:util";
+import type { FastifyInstance } from "fastify";
 import type { Configuration } from "../src/configuration.js";
 import { FederationPlayerTransferState } from "../src/generated/prisma/enums.js";
 import type { FederationPlayerTransferCreateInput } from "../src/generated/prisma/models.js";
-import type { FastifyZodInstance } from "../src/types.js";
 
 export const NODE1_IDENTITY = await promisify(generateKeyPair)("ed25519");
 export const NODE2_IDENTITY = await promisify(generateKeyPair)("ed25519");
 
-export function mockFastify(): FastifyZodInstance {
+export function mockFastify(): FastifyInstance {
   return {
     route: vi.fn(),
   } as never;
@@ -23,7 +23,7 @@ export function mockNode1Config(override?: Partial<Configuration>): Configuratio
       {
         nodeId: "00000000-0000-4000-8000-000000000002",
         comment: "System Dublin Delta",
-        host: { ip: "127.0.0.1", port: 8001 },
+        host: { ip: "127.0.0.1", port: 8002 },
         publicKey: NODE2_IDENTITY.publicKey,
       },
     ],
@@ -40,7 +40,7 @@ export function mockNode2Config(override?: Partial<Configuration>): Configuratio
       {
         nodeId: "00000000-0000-4000-8000-000000000001",
         comment: "System Dublin Alpha",
-        host: { ip: "127.0.0.1", port: 8002 },
+        host: { ip: "127.0.0.1", port: 8001 },
         publicKey: NODE1_IDENTITY.publicKey,
       },
     ],
