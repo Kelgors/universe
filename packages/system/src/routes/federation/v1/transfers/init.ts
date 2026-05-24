@@ -1,57 +1,46 @@
 import z from "zod";
 import type { Configuration } from "../../../../configuration.js";
-import { createSignedMessage, createSignedMessageSchema } from "../../../../crypto.js";
-import { mergeResponseValidationSchema as merge } from "../../../../errors/handler.js";
+import { createSignedMessage } from "../../../../crypto.js";
 import {
   onlySourceSystemCanInitiateTransfer,
   onlyTargetSystemCanAcceptTransfer,
+  outdatedMessageError,
   transferRequestIdAlreadyExists,
+  validationError,
 } from "../../../../errors/replies.js";
 import { FederationPlayerTransferState } from "../../../../generated/prisma/enums.js";
-import { checkSignature, checkSignatureResponses } from "../../../../middlewares/checkSignature.js";
+import { PayloadError, type SignedMessage } from "../../../../generated/universe/federation/v1/base.js";
+import { TransferInitRequest, TransferInitResponse } from "../../../../generated/universe/federation/v1/transfers.js";
+import { isMessageExpired } from "../../../../helpers/isMessageExpired.js";
+import { parseSignedMessage } from "../../../../middlewares/parseSignedMessage.js";
 import { saveFederationEvent } from "../../../../middlewares/saveFederationEvent.js";
 import { prisma } from "../../../../prisma.js";
-import { defaultServerValidation, errorResponseSchema } from "../../../../schemas.js";
 import type { FastifyZodInstance } from "../../../../types.js";
 
-const schema = {
-  body: z.object({
-    message: z.object({
-      requestId: z.uuid(),
-      sourceSystemId: z.uuid(),
-      targetSystemId: z.uuid(),
-      playerId: z.uuid(),
-      timestamp: z.coerce.date(),
-    }),
-    nodeId: z.uuid(),
-    signature: z.string(),
-  }),
-  response: merge(defaultServerValidation, checkSignatureResponses, {
-    200: createSignedMessageSchema(
-      z.object({
-        id: z.string(),
-        requestId: z.string(),
-        sourceSystemId: z.string(),
-        targetSystemId: z.string(),
-        playerId: z.string(),
-        timestamp: z.iso.datetime(),
-      }),
-    ),
-    400: errorResponseSchema,
-    409: errorResponseSchema,
-  }),
-};
+const payloadSchema = z.object({
+  requestId: z.uuid(),
+  sourceSystemId: z.uuid(),
+  targetSystemId: z.uuid(),
+  playerId: z.uuid(),
+  timestamp: z.number(),
+});
 
 export default (fastify: FastifyZodInstance) => {
   fastify.route({
     method: "POST",
     url: "/federation/v1/transfers/init",
-    schema,
-    preValidation: [checkSignature],
-    preHandler: [saveFederationEvent("FEDERATION_TRANSFER_INIT")],
+    preHandler: [parseSignedMessage, saveFederationEvent("FEDERATION_TRANSFER_INIT")],
     handler: async (request, reply) => {
       const config = request.getDecorator<Configuration>("config");
-      const { message, nodeId: sourceNodeId } = request.body;
+      const { nodeId: sourceNodeId, payload } = request.getDecorator<SignedMessage>("message");
+      const message = TransferInitRequest.decode(payload);
+
+      const parseResult = payloadSchema.safeParse(message);
+      if (!parseResult.success) return validationError(reply, parseResult.error);
+
+      if (isMessageExpired(message.timestamp)) {
+        return outdatedMessageError(reply, message.timestamp);
+      }
 
       if (message.sourceSystemId !== sourceNodeId) {
         return onlySourceSystemCanInitiateTransfer(reply);
@@ -78,7 +67,17 @@ export default (fastify: FastifyZodInstance) => {
         },
       });
 
-      return createSignedMessage({ ...dbTranfer, timestamp: dbTranfer.createdAt.toISOString() }, config);
+      return createSignedMessage(
+        TransferInitResponse.encode({
+          id: dbTranfer.id,
+          requestId: dbTranfer.requestId,
+          sourceSystemId: dbTranfer.sourceSystemId,
+          targetSystemId: dbTranfer.targetSystemId,
+          playerId: dbTranfer.playerId,
+          timestamp: dbTranfer.createdAt.getTime(),
+        }).finish(),
+        config,
+      );
     },
   });
 };

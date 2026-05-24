@@ -7,6 +7,8 @@ import {
 import { omit } from "lodash-es";
 import { type ZodType, z } from "zod";
 import type { $ZodError } from "zod/v4/core";
+import { createSignedMessage } from "../crypto.js";
+import { PayloadError } from "../generated/universe/federation/v1/base.js";
 
 export function createValidationError(req: FastifyRequest, error: ZodFastifySchemaValidationError) {
   return {
@@ -69,15 +71,14 @@ export function mergeResponseValidationSchema(...schemas: { [key: number]: ZodTy
 }
 
 export function errorHandler(error: unknown, req: FastifyRequest, reply: FastifyReply) {
-  if (hasZodFastifySchemaValidationErrors(error)) {
-    return reply.code(400).send(createValidationError(req, error.validation));
-  }
-
-  if (isResponseSerializationError(error)) {
-    req.log.error({ error }, "Response serialization error");
-    return reply.code(500).send({ error: "An error occurred while serializing the response" });
-  }
-
-  req.log.error({ error }, "Unexpected error");
-  reply.code(500).send({ error: "An unexpected error occurred" });
+  console.dir(error, { depth: null });
+  req.log.error({ error, req: { method: req.method, url: req.url } }, "Unexpected error");
+  reply
+    .code(500)
+    .send(
+      createSignedMessage(
+        PayloadError.encode({ error: "An unexpected error occurred", timestamp: Date.now() }).finish(),
+        req.getDecorator("config"),
+      ),
+    );
 }

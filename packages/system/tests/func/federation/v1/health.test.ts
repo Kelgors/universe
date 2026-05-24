@@ -1,10 +1,9 @@
 import { createServer } from "../../../../src/server.js";
-import { mockConfig } from "../../../mock.js";
+import { mockNode1Config } from "../../../mock.js";
 
 describe("Federation v1 Health Route", () => {
-  const server = createServer(mockConfig());
-
   it("should return 200 OK with uptime and version", async () => {
+    const server = await createServer(mockNode1Config());
     const response = await server.inject({
       method: "GET",
       url: "/federation/v1/health",
