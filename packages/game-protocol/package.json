@@ -1,0 +1,33 @@
+{
+  "name": "@universe/game-protocol",
+  "version": "1.0.0",
+  "description": "Library for the game protocol, including protobuf definitions and generated code.",
+  "exports": {
+    "./client": "./dist/generated/universe/game/v1/client.js",
+    "./server": "./dist/generated/universe/game/v1/server.js"
+  },
+  "type": "module",
+  "scripts": {
+    "precheck": "buf lint && buf generate",
+    "check": "biome check",
+    "prebuild": "buf generate",
+    "build": "tsc -p tsconfig.build.json",
+    "test": "vitest run",
+    "test:watch": "vitest watch",
+    "protobuf:lint": "buf lint",
+    "protobuf:generate": "buf generate"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "devDependencies": {
+    "@bufbuild/buf": "catalog:",
+    "@types/node": "catalog:",
+    "typescript": "catalog:",
+    "ts-proto": "catalog:",
+    "vitest": "catalog:"
+  },
+  "dependencies": {
+    "@bufbuild/protobuf": "catalog:"
+  }
+}
