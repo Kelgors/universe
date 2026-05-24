@@ -11,7 +11,7 @@ import { mockFederationTransfer, mockNode1Config, NODE2_IDENTITY } from "../../.
 
 describe("Federation Transfers Init", () => {
   it("should be a 400 when there is no content type", async () => {
-    const server = await createServer(mockNode1Config());
+    const server = createServer(mockNode1Config());
     const response = await server.inject({
       method: "POST",
       url: "/federation/v1/transfers/init",
@@ -27,7 +27,7 @@ describe("Federation Transfers Init", () => {
   });
 
   it("should send status 400 when body is empty", async () => {
-    const server = await createServer(mockNode1Config());
+    const server = createServer(mockNode1Config());
     const response = await server.inject({
       method: "POST",
       url: "/federation/v1/transfers/init",
@@ -45,7 +45,7 @@ describe("Federation Transfers Init", () => {
   });
 
   it("should send status 400 when this is not a signed message", async () => {
-    const server = await createServer(mockNode1Config());
+    const server = createServer(mockNode1Config());
     const response = await server.inject({
       method: "POST",
       url: "/federation/v1/transfers/init",
@@ -68,7 +68,7 @@ describe("Federation Transfers Init", () => {
   });
 
   it("should send status 401 when nodeId is not trusted", async () => {
-    const server = await createServer(mockNode1Config());
+    const server = createServer(mockNode1Config());
     const response = await server.inject({
       method: "POST",
       url: "/federation/v1/transfers/init",
@@ -89,7 +89,7 @@ describe("Federation Transfers Init", () => {
   });
 
   it("should send status 401 when signature is bad", async () => {
-    const server = await createServer(mockNode1Config());
+    const server = createServer(mockNode1Config());
     const response = await server.inject({
       method: "POST",
       url: "/federation/v1/transfers/init",
@@ -121,7 +121,7 @@ describe("Federation Transfers Init", () => {
   });
 
   it("should send status 400 when payload is not valid", async () => {
-    const server = await createServer(mockNode1Config());
+    const server = createServer(mockNode1Config());
     const response = await server.inject({
       method: "POST",
       url: "/federation/v1/transfers/init",
@@ -155,7 +155,7 @@ describe("Federation Transfers Init", () => {
   });
 
   it("should send status 400 when source system is not the one initiating the transfer", async () => {
-    const server = await createServer(mockNode1Config());
+    const server = createServer(mockNode1Config());
     const response = await server.inject({
       method: "POST",
       url: "/federation/v1/transfers/init",
@@ -188,7 +188,7 @@ describe("Federation Transfers Init", () => {
   });
 
   it("should send status 400 when target system is not the one accepting the transfer", async () => {
-    const server = await createServer(mockNode1Config());
+    const server = createServer(mockNode1Config());
     const response = await server.inject({
       method: "POST",
       url: "/federation/v1/transfers/init",
@@ -223,7 +223,7 @@ describe("Federation Transfers Init", () => {
   it("should send status 409 when requestId already exists", async () => {
     await prisma.federationPlayerTransfer.create({ data: mockFederationTransfer() });
 
-    const server = await createServer(mockNode1Config());
+    const server = createServer(mockNode1Config());
     const response = await server.inject({
       method: "POST",
       url: "/federation/v1/transfers/init",
@@ -256,7 +256,7 @@ describe("Federation Transfers Init", () => {
   });
 
   it("should send status 200", async () => {
-    const server = await createServer(mockNode1Config());
+    const server = createServer(mockNode1Config());
     const response = await server.inject({
       method: "POST",
       url: "/federation/v1/transfers/init",
@@ -293,7 +293,7 @@ describe("Federation Transfers Init", () => {
   });
 
   it("should save the message in the event log", async () => {
-    const server = await createServer(mockNode1Config());
+    const server = createServer(mockNode1Config());
     const payload = TransferInitRequest.encode({
       requestId: "00000000-0000-4000-8000-000000000000",
       sourceSystemId: "00000000-0000-4000-8000-000000000002",

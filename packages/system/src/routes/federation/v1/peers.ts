@@ -12,7 +12,7 @@ export default (fastify: FastifyInstance) => {
           nodeId: peer.nodeId,
           host: peer.host,
           publicKey: peer.publicKey.export({ format: "pem", type: "spki" }).toString(),
-          status: "unknown" as const,
+          status: "unknown",
         })),
       };
     },

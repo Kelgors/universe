@@ -7,7 +7,7 @@ export default (fastify: FastifyInstance) => {
     url: "/federation/v1/health",
     handler: () => {
       return {
-        status: "ok" as const,
+        status: "ok",
         uptime: Math.floor((Date.now() - startedAt.getTime()) / 1000),
         version: 1,
         stage: env.APP_STAGE,

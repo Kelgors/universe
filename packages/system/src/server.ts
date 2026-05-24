@@ -3,7 +3,7 @@ import type { Configuration } from "./configuration.js";
 import { errorHandler } from "./errors/handler.js";
 import routes from "./routes/federation/v1/index.js";
 
-export async function createServer(config: Configuration) {
+export function createServer(config: Configuration) {
   const server = fastify({
     logger: true,
   });

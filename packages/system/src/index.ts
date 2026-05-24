@@ -10,7 +10,7 @@ type StartOptions = {
 export async function start(options: StartOptions) {
   await prisma.$connect();
   const config = await loadConfig(options.config ?? "configuration.json");
-  const server = await createServer(config);
+  const server = createServer(config);
 
   async function exit() {
     await server.close();
