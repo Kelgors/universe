@@ -1,19 +1,19 @@
 import type { FastifyRequest } from "fastify";
-import type { SignedMessage } from "../generated/universe/federation/v1/base.js";
+import type { SignedEnveloppe } from "../generated/universe/federation/v1/base.js";
 import { prisma } from "../prisma.js";
 
 export function saveFederationEvent(eventType: string) {
   return async (request: FastifyRequest) => {
-    const message = request.getDecorator<SignedMessage | undefined>("message");
-    if (!message) return;
+    const enveloppe = request.getDecorator<SignedEnveloppe | undefined>("enveloppe");
+    if (!enveloppe) return;
 
-    const { nodeId, payload, signature } = message;
+    const { nodeId, message, signature } = enveloppe;
 
     await prisma.federationEvent.create({
       data: {
         eventType,
         nodeId,
-        payload: Uint8Array.from(payload),
+        message: Uint8Array.from(message),
         signature: Uint8Array.from(signature),
       },
     });

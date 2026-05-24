@@ -41,7 +41,7 @@ model FederationEvent {
   id        String @id @default(uuid())
   nodeId    String
   eventType String
-  payload   Bytes
+  message   Bytes
   signature Bytes
 
   createdAt DateTime @default(now())

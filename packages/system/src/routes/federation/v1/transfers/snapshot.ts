@@ -2,7 +2,7 @@ import { hash } from "node:crypto";
 import type { FastifyInstance } from "fastify";
 import z from "zod";
 import type { Configuration } from "../../../../configuration.js";
-import { createSignedMessage } from "../../../../crypto.js";
+import { createSignedEnveloppe } from "../../../../crypto.js";
 import {
   outdatedMessageError,
   snapshotHashNotMatch,
@@ -11,7 +11,7 @@ import {
   validationError,
 } from "../../../../errors/replies.js";
 import { FederationPlayerTransferState } from "../../../../generated/prisma/enums.js";
-import type { SignedMessage } from "../../../../generated/universe/federation/v1/base.js";
+import type { SignedEnveloppe } from "../../../../generated/universe/federation/v1/base.js";
 import {
   MobilePlayerData,
   TransferSnapshotRequest,
@@ -19,11 +19,11 @@ import {
 } from "../../../../generated/universe/federation/v1/transfers.js";
 import { isMessageExpired } from "../../../../helpers/isMessageExpired.js";
 import { safeDecode } from "../../../../helpers/protobuf.js";
-import { parseSignedMessage } from "../../../../middlewares/parseSignedMessage.js";
+import { parseSignedEnveloppe } from "../../../../middlewares/parseSignedEnveloppe.js";
 import { saveFederationEvent } from "../../../../middlewares/saveFederationEvent.js";
 import { prisma } from "../../../../prisma.js";
 
-const requestBodySchema = z.object({
+const messageSchema = z.object({
   requestId: z.uuid(),
   transferId: z.uuid(),
   snapshotData: z.instanceof(Buffer),
@@ -50,13 +50,14 @@ export default (fastify: FastifyInstance) => {
   fastify.route({
     method: "POST",
     url: "/federation/v1/transfers/snapshot",
-    preHandler: [parseSignedMessage, saveFederationEvent("FEDERATION_TRANSFER_SNAPSHOT")],
+    preHandler: [parseSignedEnveloppe, saveFederationEvent("FEDERATION_TRANSFER_SNAPSHOT")],
     handler: async (request, reply) => {
       const config = request.getDecorator<Configuration>("config");
-      const { nodeId: sourceNodeId, payload } = request.getDecorator<SignedMessage>("message");
-      const message = TransferSnapshotRequest.decode(payload);
-      const parseResult = requestBodySchema.safeParse(message);
+      const enveloppe = request.getDecorator<SignedEnveloppe>("enveloppe");
+
+      const parseResult = safeDecode(TransferSnapshotRequest, enveloppe.message, messageSchema);
       if (!parseResult.success) return validationError(reply, parseResult.error);
+      const message = parseResult.data;
 
       if (isMessageExpired(message.timestamp)) {
         return outdatedMessageError(reply, message.timestamp);
@@ -66,7 +67,7 @@ export default (fastify: FastifyInstance) => {
         where: {
           requestId: message.requestId,
           id: message.transferId,
-          sourceSystemId: sourceNodeId,
+          sourceSystemId: enveloppe.nodeId,
         },
       });
       if (!dbTranfer) {
@@ -98,7 +99,7 @@ export default (fastify: FastifyInstance) => {
       });
 
       return reply.status(200).send(
-        createSignedMessage(
+        createSignedEnveloppe(
           TransferSnapshotResponse.encode({
             transferId: message.transferId,
             requestId: message.requestId,

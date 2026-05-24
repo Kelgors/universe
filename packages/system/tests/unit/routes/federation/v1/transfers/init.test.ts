@@ -1,9 +1,9 @@
-import { parseSignedMessage } from "../../../../../../src/middlewares/parseSignedMessage.js";
+import { parseSignedEnveloppe } from "../../../../../../src/middlewares/parseSignedEnveloppe.js";
 import { saveFederationEvent } from "../../../../../../src/middlewares/saveFederationEvent.js";
 import route from "../../../../../../src/routes/federation/v1/transfers/init.js";
 import { mockFastify } from "../../../../../mock.js";
 
-vi.mock("../../../../../../src/middlewares/parseSignedMessage.js");
+vi.mock("../../../../../../src/middlewares/parseSignedEnveloppe.js");
 vi.mock("../../../../../../src/middlewares/saveFederationEvent.js");
 
 describe("Federation Transfer Init Route", () => {
@@ -18,7 +18,7 @@ describe("Federation Transfer Init Route", () => {
       expect.objectContaining({
         method: "POST",
         url: "/federation/v1/transfers/init",
-        preHandler: [parseSignedMessage, saveFederationEvent("FEDERATION_TRANSFER_INIT")],
+        preHandler: [parseSignedEnveloppe, saveFederationEvent("FEDERATION_TRANSFER_INIT")],
         handler: expect.any(Function),
       }),
     );

@@ -16,7 +16,7 @@ export function createServer(config: Configuration) {
   );
 
   server.decorateRequest("config", null);
-  server.decorateRequest("message", null);
+  server.decorateRequest("enveloppe", null);
   server.addHook("onRequest", async (req) => {
     req.setDecorator("config", config);
   });

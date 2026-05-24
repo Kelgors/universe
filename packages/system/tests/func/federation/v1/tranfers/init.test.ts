@@ -1,6 +1,6 @@
 import { sign, verify } from "node:crypto";
-import { createSignedMessage } from "../../../../../src/crypto.js";
-import { PayloadError, SignedMessage } from "../../../../../src/generated/universe/federation/v1/base.js";
+import { createSignedEnveloppe } from "../../../../../src/crypto.js";
+import { FederationError, SignedEnveloppe } from "../../../../../src/generated/universe/federation/v1/base.js";
 import {
   TransferInitRequest,
   TransferInitResponse,
@@ -18,11 +18,11 @@ describe("Federation Transfers Init", () => {
     });
 
     expect(response.headers).toHaveProperty("content-type", "application/octet-stream");
-    const message = SignedMessage.decode(response.rawPayload);
-    expect(verify(null, message.payload, { key: mockNode1Config().privateKey }, message.signature)).toBe(true);
-    expect(message).toHaveProperty("nodeId", mockNode1Config().nodeId);
+    const enveloppe = SignedEnveloppe.decode(response.rawPayload);
+    expect(verify(null, enveloppe.message, { key: mockNode1Config().privateKey }, enveloppe.signature)).toBe(true);
+    expect(enveloppe).toHaveProperty("nodeId", mockNode1Config().nodeId);
 
-    expect(PayloadError.decode(message.payload)).toHaveProperty("error", "Invalid content type");
+    expect(FederationError.decode(enveloppe.message)).toHaveProperty("code", "Invalid content type");
     expect(response.statusCode).toBe(400);
   });
 
@@ -36,11 +36,11 @@ describe("Federation Transfers Init", () => {
     });
 
     expect(response.headers).toHaveProperty("content-type", "application/octet-stream");
-    const message = SignedMessage.decode(response.rawPayload);
-    expect(verify(null, message.payload, { key: mockNode1Config().privateKey }, message.signature)).toBe(true);
-    expect(message).toHaveProperty("nodeId", mockNode1Config().nodeId);
+    const enveloppe = SignedEnveloppe.decode(response.rawPayload);
+    expect(verify(null, enveloppe.message, { key: mockNode1Config().privateKey }, enveloppe.signature)).toBe(true);
+    expect(enveloppe).toHaveProperty("nodeId", mockNode1Config().nodeId);
 
-    expect(PayloadError.decode(message.payload)).toHaveProperty("error", "Missing raw body");
+    expect(FederationError.decode(enveloppe.message)).toHaveProperty("code", "Missing raw body");
     expect(response.statusCode).toBe(400);
   });
 
@@ -55,12 +55,12 @@ describe("Federation Transfers Init", () => {
 
     expect(response.headers).toHaveProperty("content-type", "application/octet-stream");
 
-    const message = SignedMessage.decode(response.rawPayload);
-    expect(verify(null, message.payload, { key: mockNode1Config().privateKey }, message.signature)).toBe(true);
-    expect(message).toHaveProperty("nodeId", mockNode1Config().nodeId);
+    const enveloppe = SignedEnveloppe.decode(response.rawPayload);
+    expect(verify(null, enveloppe.message, { key: mockNode1Config().privateKey }, enveloppe.signature)).toBe(true);
+    expect(enveloppe).toHaveProperty("nodeId", mockNode1Config().nodeId);
 
-    expect(PayloadError.decode(message.payload)).toEqual({
-      error: "Invalid message format",
+    expect(FederationError.decode(enveloppe.message)).toEqual({
+      code: "Invalid enveloppe format",
       details: "✖ Invalid UUID\n  → at nodeId",
       timestamp: 1767225600000,
     });
@@ -72,7 +72,7 @@ describe("Federation Transfers Init", () => {
     const response = await server.inject({
       method: "POST",
       url: "/federation/v1/transfers/init",
-      body: createSignedMessage(Buffer.from("test", "utf-8"), {
+      body: createSignedEnveloppe(Buffer.from("test", "utf-8"), {
         privateKey: NODE2_IDENTITY.privateKey,
         nodeId: "00000000-0000-4000-8000-000000000123",
       }),
@@ -80,11 +80,11 @@ describe("Federation Transfers Init", () => {
     });
 
     expect(response.headers).toHaveProperty("content-type", "application/octet-stream");
-    const message = SignedMessage.decode(response.rawPayload);
-    expect(verify(null, message.payload, { key: mockNode1Config().privateKey }, message.signature)).toBe(true);
-    expect(message).toHaveProperty("nodeId", mockNode1Config().nodeId);
+    const enveloppe = SignedEnveloppe.decode(response.rawPayload);
+    expect(verify(null, enveloppe.message, { key: mockNode1Config().privateKey }, enveloppe.signature)).toBe(true);
+    expect(enveloppe).toHaveProperty("nodeId", mockNode1Config().nodeId);
 
-    expect(PayloadError.decode(message.payload)).toEqual({ error: "Unknown node ID", timestamp: 1767225600000 });
+    expect(FederationError.decode(enveloppe.message)).toEqual({ code: "Unknown node ID", timestamp: 1767225600000 });
     expect(response.statusCode).toBe(401);
   });
 
@@ -94,8 +94,8 @@ describe("Federation Transfers Init", () => {
       method: "POST",
       url: "/federation/v1/transfers/init",
       body: Buffer.from(
-        SignedMessage.encode({
-          payload: Buffer.from(
+        SignedEnveloppe.encode({
+          message: Buffer.from(
             TransferInitRequest.encode({
               requestId: "00000000-0000-4000-8000-000000000000",
               sourceSystemId: "00000000-0000-4000-8000-000000000002",
@@ -112,11 +112,11 @@ describe("Federation Transfers Init", () => {
     });
 
     expect(response.headers).toHaveProperty("content-type", "application/octet-stream");
-    const message = SignedMessage.decode(response.rawPayload);
-    expect(verify(null, message.payload, { key: mockNode1Config().privateKey }, message.signature)).toBe(true);
-    expect(message).toHaveProperty("nodeId", mockNode1Config().nodeId);
+    const enveloppe = SignedEnveloppe.decode(response.rawPayload);
+    expect(verify(null, enveloppe.message, { key: mockNode1Config().privateKey }, enveloppe.signature)).toBe(true);
+    expect(enveloppe).toHaveProperty("nodeId", mockNode1Config().nodeId);
 
-    expect(PayloadError.decode(message.payload)).toEqual({ error: "Invalid signature", timestamp: 1767225600000 });
+    expect(FederationError.decode(enveloppe.message)).toEqual({ code: "Invalid signature", timestamp: 1767225600000 });
     expect(response.statusCode).toBe(401);
   });
 
@@ -125,7 +125,7 @@ describe("Federation Transfers Init", () => {
     const response = await server.inject({
       method: "POST",
       url: "/federation/v1/transfers/init",
-      body: createSignedMessage(
+      body: createSignedEnveloppe(
         TransferInitRequest.encode({
           requestId: "00000000-0000-4000-8000-000000000000",
           sourceSystemId: "00000000-0000-4000-8000-000000000002",
@@ -142,13 +142,13 @@ describe("Federation Transfers Init", () => {
     });
 
     expect(response.headers).toHaveProperty("content-type", "application/octet-stream");
-    const message = SignedMessage.decode(response.rawPayload);
-    expect(verify(null, message.payload, { key: mockNode1Config().privateKey }, message.signature)).toBe(true);
-    expect(message).toHaveProperty("nodeId", mockNode1Config().nodeId);
+    const enveloppe = SignedEnveloppe.decode(response.rawPayload);
+    expect(verify(null, enveloppe.message, { key: mockNode1Config().privateKey }, enveloppe.signature)).toBe(true);
+    expect(enveloppe).toHaveProperty("nodeId", mockNode1Config().nodeId);
 
-    expect(PayloadError.decode(message.payload)).toEqual({
+    expect(FederationError.decode(enveloppe.message)).toEqual({
       details: "✖ Invalid UUID\n  → at playerId",
-      error: "Invalid payload format",
+      code: "Invalid message format",
       timestamp: 1767225600000,
     });
     expect(response.statusCode).toBe(400);
@@ -159,7 +159,7 @@ describe("Federation Transfers Init", () => {
     const response = await server.inject({
       method: "POST",
       url: "/federation/v1/transfers/init",
-      body: createSignedMessage(
+      body: createSignedEnveloppe(
         TransferInitRequest.encode({
           requestId: "00000000-0000-4000-8000-000000000000",
           sourceSystemId: "00000000-0000-4000-8000-000000000003",
@@ -176,12 +176,12 @@ describe("Federation Transfers Init", () => {
     });
 
     expect(response.headers).toHaveProperty("content-type", "application/octet-stream");
-    const message = SignedMessage.decode(response.rawPayload);
-    expect(verify(null, message.payload, { key: mockNode1Config().privateKey }, message.signature)).toBe(true);
-    expect(message).toHaveProperty("nodeId", mockNode1Config().nodeId);
+    const enveloppe = SignedEnveloppe.decode(response.rawPayload);
+    expect(verify(null, enveloppe.message, { key: mockNode1Config().privateKey }, enveloppe.signature)).toBe(true);
+    expect(enveloppe).toHaveProperty("nodeId", mockNode1Config().nodeId);
 
-    expect(PayloadError.decode(message.payload)).toEqual({
-      error: "Only source system can initiate transfer",
+    expect(FederationError.decode(enveloppe.message)).toEqual({
+      code: "Only source system can initiate transfer",
       timestamp: 1767225600000,
     });
     expect(response.statusCode).toBe(400);
@@ -192,7 +192,7 @@ describe("Federation Transfers Init", () => {
     const response = await server.inject({
       method: "POST",
       url: "/federation/v1/transfers/init",
-      body: createSignedMessage(
+      body: createSignedEnveloppe(
         TransferInitRequest.encode({
           requestId: "00000000-0000-4000-8000-000000000000",
           sourceSystemId: "00000000-0000-4000-8000-000000000002",
@@ -209,12 +209,12 @@ describe("Federation Transfers Init", () => {
     });
 
     expect(response.headers).toHaveProperty("content-type", "application/octet-stream");
-    const message = SignedMessage.decode(response.rawPayload);
-    expect(verify(null, message.payload, { key: mockNode1Config().privateKey }, message.signature)).toBe(true);
-    expect(message).toHaveProperty("nodeId", mockNode1Config().nodeId);
+    const enveloppe = SignedEnveloppe.decode(response.rawPayload);
+    expect(verify(null, enveloppe.message, { key: mockNode1Config().privateKey }, enveloppe.signature)).toBe(true);
+    expect(enveloppe).toHaveProperty("nodeId", mockNode1Config().nodeId);
 
-    expect(PayloadError.decode(message.payload)).toEqual({
-      error: "Only target system can accept transfer",
+    expect(FederationError.decode(enveloppe.message)).toEqual({
+      code: "Only target system can accept transfer",
       timestamp: 1767225600000,
     });
     expect(response.statusCode).toBe(400);
@@ -227,7 +227,7 @@ describe("Federation Transfers Init", () => {
     const response = await server.inject({
       method: "POST",
       url: "/federation/v1/transfers/init",
-      body: createSignedMessage(
+      body: createSignedEnveloppe(
         TransferInitRequest.encode({
           requestId: "00000000-0000-4000-8000-000000000000",
           sourceSystemId: "00000000-0000-4000-8000-000000000002",
@@ -244,12 +244,12 @@ describe("Federation Transfers Init", () => {
     });
 
     expect(response.headers).toHaveProperty("content-type", "application/octet-stream");
-    const message = SignedMessage.decode(response.rawPayload);
-    expect(verify(null, message.payload, { key: mockNode1Config().privateKey }, message.signature)).toBe(true);
-    expect(message).toHaveProperty("nodeId", mockNode1Config().nodeId);
+    const enveloppe = SignedEnveloppe.decode(response.rawPayload);
+    expect(verify(null, enveloppe.message, { key: mockNode1Config().privateKey }, enveloppe.signature)).toBe(true);
+    expect(enveloppe).toHaveProperty("nodeId", mockNode1Config().nodeId);
 
-    expect(PayloadError.decode(message.payload)).toEqual({
-      error: "Transfer with the same requestId already exists",
+    expect(FederationError.decode(enveloppe.message)).toEqual({
+      code: "Transfer with the same requestId already exists",
       timestamp: 1767225600000,
     });
     expect(response.statusCode).toBe(409);
@@ -260,7 +260,7 @@ describe("Federation Transfers Init", () => {
     const response = await server.inject({
       method: "POST",
       url: "/federation/v1/transfers/init",
-      body: createSignedMessage(
+      body: createSignedEnveloppe(
         TransferInitRequest.encode({
           requestId: "00000000-0000-4000-8000-000000000000",
           sourceSystemId: "00000000-0000-4000-8000-000000000002",
@@ -277,11 +277,11 @@ describe("Federation Transfers Init", () => {
     });
 
     expect(response.headers).toHaveProperty("content-type", "application/octet-stream");
-    const message = SignedMessage.decode(response.rawPayload);
-    expect(verify(null, message.payload, { key: mockNode1Config().privateKey }, message.signature)).toBe(true);
-    expect(message).toHaveProperty("nodeId", mockNode1Config().nodeId);
+    const enveloppe = SignedEnveloppe.decode(response.rawPayload);
+    expect(verify(null, enveloppe.message, { key: mockNode1Config().privateKey }, enveloppe.signature)).toBe(true);
+    expect(enveloppe).toHaveProperty("nodeId", mockNode1Config().nodeId);
 
-    expect(TransferInitResponse.decode(message.payload)).toEqual({
+    expect(TransferInitResponse.decode(enveloppe.message)).toEqual({
       id: expect.any(String),
       requestId: "00000000-0000-4000-8000-000000000000",
       sourceSystemId: "00000000-0000-4000-8000-000000000002",
@@ -294,17 +294,17 @@ describe("Federation Transfers Init", () => {
 
   it("should save the message in the event log", async () => {
     const server = createServer(mockNode1Config());
-    const payload = TransferInitRequest.encode({
+    const message = TransferInitRequest.encode({
       requestId: "00000000-0000-4000-8000-000000000000",
       sourceSystemId: "00000000-0000-4000-8000-000000000002",
       targetSystemId: "00000000-0000-4000-8000-000000000001",
       playerId: "00000000-0000-4000-8000-000000000000",
       timestamp: new Date("2026-01-01T00:00:00.000Z").getTime(),
     }).finish();
-    const signature = sign(null, payload, { key: NODE2_IDENTITY.privateKey });
-    const body = SignedMessage.encode({
+    const signature = sign(null, message, { key: NODE2_IDENTITY.privateKey });
+    const body = SignedEnveloppe.encode({
       nodeId: "00000000-0000-4000-8000-000000000002",
-      payload: Buffer.from(payload),
+      message: Buffer.from(message),
       signature: Buffer.from(signature),
     }).finish();
     const response = await server.inject({
@@ -320,8 +320,8 @@ describe("Federation Transfers Init", () => {
         where: {
           eventType: "FEDERATION_TRANSFER_INIT",
           nodeId: "00000000-0000-4000-8000-000000000002",
-          payload: payload,
-          signature: signature,
+          message,
+          signature,
         },
       }),
     ).resolves.toHaveProperty("id");

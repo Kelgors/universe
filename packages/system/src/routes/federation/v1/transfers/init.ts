@@ -1,7 +1,7 @@
 import type { FastifyInstance } from "fastify";
 import z from "zod";
 import type { Configuration } from "../../../../configuration.js";
-import { createSignedMessage } from "../../../../crypto.js";
+import { createSignedEnveloppe } from "../../../../crypto.js";
 import {
   onlySourceSystemCanInitiateTransfer,
   onlyTargetSystemCanAcceptTransfer,
@@ -10,15 +10,15 @@ import {
   validationError,
 } from "../../../../errors/replies.js";
 import { FederationPlayerTransferState } from "../../../../generated/prisma/enums.js";
-import type { SignedMessage } from "../../../../generated/universe/federation/v1/base.js";
+import type { SignedEnveloppe } from "../../../../generated/universe/federation/v1/base.js";
 import { TransferInitRequest, TransferInitResponse } from "../../../../generated/universe/federation/v1/transfers.js";
 import { isMessageExpired } from "../../../../helpers/isMessageExpired.js";
 import { safeDecode } from "../../../../helpers/protobuf.js";
-import { parseSignedMessage } from "../../../../middlewares/parseSignedMessage.js";
+import { parseSignedEnveloppe } from "../../../../middlewares/parseSignedEnveloppe.js";
 import { saveFederationEvent } from "../../../../middlewares/saveFederationEvent.js";
 import { prisma } from "../../../../prisma.js";
 
-const payloadSchema = z.object({
+const messageSchema = z.object({
   requestId: z.uuid(),
   sourceSystemId: z.uuid(),
   targetSystemId: z.uuid(),
@@ -30,12 +30,12 @@ export default (fastify: FastifyInstance) => {
   fastify.route({
     method: "POST",
     url: "/federation/v1/transfers/init",
-    preHandler: [parseSignedMessage, saveFederationEvent("FEDERATION_TRANSFER_INIT")],
+    preHandler: [parseSignedEnveloppe, saveFederationEvent("FEDERATION_TRANSFER_INIT")],
     handler: async (request, reply) => {
       const config = request.getDecorator<Configuration>("config");
-      const { nodeId: sourceNodeId, payload } = request.getDecorator<SignedMessage>("message");
+      const enveloppe = request.getDecorator<SignedEnveloppe>("enveloppe");
 
-      const parseResult = safeDecode(TransferInitRequest, payload, payloadSchema);
+      const parseResult = safeDecode(TransferInitRequest, enveloppe.message, messageSchema);
       if (!parseResult.success) return validationError(reply, parseResult.error);
       const message = parseResult.data;
 
@@ -43,7 +43,7 @@ export default (fastify: FastifyInstance) => {
         return outdatedMessageError(reply, message.timestamp);
       }
 
-      if (message.sourceSystemId !== sourceNodeId) {
+      if (message.sourceSystemId !== enveloppe.nodeId) {
         return onlySourceSystemCanInitiateTransfer(reply);
       }
 
@@ -68,7 +68,7 @@ export default (fastify: FastifyInstance) => {
         },
       });
 
-      return createSignedMessage(
+      return createSignedEnveloppe(
         TransferInitResponse.encode({
           id: dbTranfer.id,
           requestId: dbTranfer.requestId,
