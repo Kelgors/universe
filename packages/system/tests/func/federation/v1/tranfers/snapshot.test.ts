@@ -5,6 +5,7 @@ import { PayloadError, SignedMessage } from "../../../../../src/generated/univer
 import {
   MobilePlayerData,
   TransferSnapshotRequest,
+  TransferSnapshotResponse,
 } from "../../../../../src/generated/universe/federation/v1/transfers.js";
 import { prisma } from "../../../../../src/prisma.js";
 import { createServer } from "../../../../../src/server.js";
@@ -305,9 +306,16 @@ describe("Federation Transfers Snapshot", () => {
     expect(response.statusCode).toBe(400);
   });
 
-  it("should send status 204", async () => {
+  it("should send status 200", async () => {
     const mockTransfer = mockFederationTransfer({ state: FederationPlayerTransferState.APPROVED_BY_TARGET });
     const { id: transferId } = await prisma.federationPlayerTransfer.create({ data: mockTransfer });
+
+    const snapshotData = Buffer.from(
+      MobilePlayerData.encode({
+        playerId: "00000000-0000-4000-8000-000000000000",
+        playerName: "PlayerOne",
+      }).finish(),
+    );
 
     const server = await createServer(mockNode1Config());
     const response = await server.inject({
@@ -317,8 +325,8 @@ describe("Federation Transfers Snapshot", () => {
         TransferSnapshotRequest.encode({
           transferId,
           requestId: "00000000-0000-4000-8000-000000000000",
-          snapshotData: Buffer.from("this is a snapshot", "utf-8"),
-          snapshotHash: hash("sha256", Buffer.from("this is a snapshot", "utf-8")),
+          snapshotData,
+          snapshotHash: hash("sha256", snapshotData),
           timestamp: new Date("2026-01-01T00:00:00.000Z").getTime(),
         }).finish(),
         mockNode2Config(),
@@ -326,24 +334,41 @@ describe("Federation Transfers Snapshot", () => {
       headers: { "content-type": "application/octet-stream" },
     });
 
-    expect(response.statusCode).toBe(204);
+    expect(response.headers).toHaveProperty("content-type", "application/octet-stream");
+    const message = SignedMessage.decode(response.rawPayload);
+    expect(verify(null, message.payload, { key: mockNode1Config().privateKey }, message.signature)).toBe(true);
+    expect(message).toHaveProperty("nodeId", mockNode1Config().nodeId);
+
+    expect(TransferSnapshotResponse.decode(message.payload)).toEqual({
+      transferId,
+      requestId: "00000000-0000-4000-8000-000000000000",
+      timestamp: new Date("2026-01-01T00:00:00.000Z").getTime(),
+    });
+
+    expect(response.statusCode).toBe(200);
   });
 
   it("should save the message in the event log", async () => {
     const mockTransfer = mockFederationTransfer({ state: FederationPlayerTransferState.APPROVED_BY_TARGET });
     const { id: transferId } = await prisma.federationPlayerTransfer.create({ data: mockTransfer });
 
+    const snapshotData = Buffer.from(
+      MobilePlayerData.encode({
+        playerId: "00000000-0000-4000-8000-000000000000",
+        playerName: "PlayerOne",
+      }).finish(),
+    );
+
     const server = await createServer(mockNode1Config());
     const payload = Buffer.from(
       TransferSnapshotRequest.encode({
         transferId,
         requestId: mockTransfer.requestId,
-        snapshotData: Buffer.alloc(0),
-        snapshotHash: hash("sha256", Buffer.alloc(0)),
+        snapshotData,
+        snapshotHash: hash("sha256", snapshotData),
         timestamp: new Date("2026-01-01T00:00:00.000Z").getTime(),
       }).finish(),
     );
-
     const signature = sign(null, payload, NODE2_IDENTITY.privateKey);
 
     const response = await server.inject({
@@ -359,7 +384,7 @@ describe("Federation Transfers Snapshot", () => {
       headers: { "content-type": "application/octet-stream" },
     });
 
-    expect(response.statusCode).toBe(204);
+    expect(response.statusCode).toBe(200);
     await expect(
       prisma.federationEvent.findFirst({
         where: {

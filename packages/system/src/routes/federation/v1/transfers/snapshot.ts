@@ -1,6 +1,8 @@
 import { hash } from "node:crypto";
 import type { FastifyInstance } from "fastify";
 import z from "zod";
+import type { Configuration } from "../../../../configuration.js";
+import { createSignedMessage } from "../../../../crypto.js";
 import {
   outdatedMessageError,
   snapshotHashNotMatch,
@@ -10,8 +12,13 @@ import {
 } from "../../../../errors/replies.js";
 import { FederationPlayerTransferState } from "../../../../generated/prisma/enums.js";
 import type { SignedMessage } from "../../../../generated/universe/federation/v1/base.js";
-import { MobilePlayerData, TransferSnapshotRequest } from "../../../../generated/universe/federation/v1/transfers.js";
+import {
+  MobilePlayerData,
+  TransferSnapshotRequest,
+  TransferSnapshotResponse,
+} from "../../../../generated/universe/federation/v1/transfers.js";
 import { isMessageExpired } from "../../../../helpers/isMessageExpired.js";
+import { safeDecode } from "../../../../helpers/protobuf.js";
 import { parseSignedMessage } from "../../../../middlewares/parseSignedMessage.js";
 import { saveFederationEvent } from "../../../../middlewares/saveFederationEvent.js";
 import { prisma } from "../../../../prisma.js";
@@ -22,6 +29,11 @@ const requestBodySchema = z.object({
   snapshotData: z.instanceof(Buffer),
   snapshotHash: z.string(),
   timestamp: z.number(),
+});
+
+const playerDataSchema = z.object({
+  playerId: z.uuid(),
+  playerName: z.string(),
 });
 
 async function rejectTransfer(requestId: string, transferId: string, cause: string) {
@@ -40,6 +52,7 @@ export default (fastify: FastifyInstance) => {
     url: "/federation/v1/transfers/snapshot",
     preHandler: [parseSignedMessage, saveFederationEvent("FEDERATION_TRANSFER_SNAPSHOT")],
     handler: async (request, reply) => {
+      const config = request.getDecorator<Configuration>("config");
       const { nodeId: sourceNodeId, payload } = request.getDecorator<SignedMessage>("message");
       const message = TransferSnapshotRequest.decode(payload);
       const parseResult = requestBodySchema.safeParse(message);
@@ -70,8 +83,7 @@ export default (fastify: FastifyInstance) => {
         return snapshotHashNotMatch(reply);
       }
 
-      const playerData = MobilePlayerData.decode(message.snapshotData);
-      const result = z.unknown().safeParse(playerData);
+      const result = safeDecode(MobilePlayerData, message.snapshotData, playerDataSchema);
       if (!result.success) {
         await rejectTransfer(message.requestId, message.transferId, "Snapshot schema parse error");
         return reply.status(400).send(validationError(reply, result.error));
@@ -85,7 +97,16 @@ export default (fastify: FastifyInstance) => {
         },
       });
 
-      return reply.status(204).send();
+      return reply.status(200).send(
+        createSignedMessage(
+          TransferSnapshotResponse.encode({
+            transferId: message.transferId,
+            requestId: message.requestId,
+            timestamp: Date.now(),
+          }).finish(),
+          config,
+        ),
+      );
     },
   });
 };

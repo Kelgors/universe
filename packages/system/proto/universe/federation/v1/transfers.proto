@@ -27,6 +27,12 @@ message TransferSnapshotRequest {
   int64  timestamp     = 5;
 }
 
+message TransferSnapshotResponse {
+  string transfer_id = 1;
+  string request_id  = 2;
+  int64  timestamp   = 3;
+}
+
 message MobilePlayerData {
   string player_id   = 1;
   string player_name = 2;
