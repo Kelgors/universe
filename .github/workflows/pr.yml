@@ -39,8 +39,12 @@ jobs:
       - name: Run lint
         run: pnpm exec turbo check
 
+      - name: Run build
+        run: pnpm exec turbo build
+
       - name: Migrate database
         run: pnpm exec turbo test:migrate
 
       - name: Run tests
         run: pnpm exec turbo test -- --passWithNoTests
+

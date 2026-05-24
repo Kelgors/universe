@@ -9,8 +9,11 @@ allowBuilds:
   protobufjs: true
 
 catalog:
+  "@bufbuild/buf": "^1.69.0"
+  "@bufbuild/protobuf": "^2.12.0"
   "@types/node": "^24.12.4"
   "dotenv": "^17.4.2"
+  "ts-proto": "^2.11.8"
   "tsx": "^4.22.3"
   "typescript": "^6.0.3"
   "vitest": "^4.1.7"

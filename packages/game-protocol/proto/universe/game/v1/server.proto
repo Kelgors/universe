@@ -1,0 +1,31 @@
+syntax = "proto3";
+
+package universe.game.v1;
+
+message ServerSetValue {
+  string eid   = 1;
+  string cid   = 2;
+  string key   = 3;
+  bytes  value = 4;
+  int64  nonce = 5;
+}
+
+message ServerSnapshot {
+  string id        = 1;
+  bytes  data      = 2;
+  string checksum  = 3;
+  int64  timestamp = 4;
+}
+
+enum ServerCommandType {
+  SERVER_COMMAND_TYPE_UNSPECIFIED = 0;
+  SERVER_COMMAND_TYPE_SNAPSHOT    = 1;
+  SERVER_COMMAND_TYPE_SET_VALUE   = 2;
+}
+
+message ServerSignedEnveloppe {
+  string            player_id = 1;
+  ServerCommandType type      = 2;
+  bytes             message   = 3;
+  bytes             signature = 4;
+}
