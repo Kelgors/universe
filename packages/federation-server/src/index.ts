@@ -18,7 +18,7 @@ export async function start(options: StartOptions) {
   process.once("SIGINT", onExitSignal);
   process.once("SIGTERM", onExitSignal);
 
-  server.listen({ port: 3000 }, (err, address) => {
+  server.listen({ port: 3001 }, (err, address) => {
     if (err) {
       server.log.error(err);
       void server.close().finally(() => process.exit(1));

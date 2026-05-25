@@ -6,7 +6,7 @@
   "type": "module",
   "exports": {
     ".": "./src/index.ts",
-    "./prisma": "./src/prisma.ts"
+    "./prisma/*": "./src/generated/prisma/*"
   },
   "scripts": {
     "postinstall": "prisma generate",
@@ -16,7 +16,6 @@
     "test": "vitest run",
     "test:watch": "vitest watch",
     "test:migrate": "DOTENV_CONFIG_PATH=tests/.test.env prisma migrate dev",
-    "clean": "rm -rf dist",
     "prisma:generate": "prisma generate",
     "prisma:migrate": "prisma migrate dev",
     "prisma:studio": "prisma studio"

@@ -1,7 +1,7 @@
 import { safeDecode } from "@universe/game-protocol";
 import { type SignedEnveloppe, TransferInitRequest, TransferInitResponse } from "@universe/game-protocol/federation";
 import type { Configuration } from "@universe/server-shared";
-import { FederationPlayerTransferState } from "@universe/server-shared/prisma";
+import { FederationPlayerTransferState } from "@universe/server-shared/prisma/enums.js";
 import type { FastifyInstance } from "fastify";
 import z from "zod";
 import { createSignedEnveloppe } from "../../../../crypto.js";

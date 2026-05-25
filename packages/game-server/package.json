@@ -10,8 +10,7 @@
     "build": "tsc -p tsconfig.build.json",
     "start": "node dist/index.js",
     "test": "vitest run",
-    "test:watch": "vitest watch",
-    "clean": "rm -rf dist"
+    "test:watch": "vitest watch"
   },
   "keywords": [],
   "author": "",
@@ -24,7 +23,7 @@
     "vitest": "catalog:"
   },
   "dependencies": {
-    "@universe/server-federation-plugin": "workspace:*",
+    "@fastify/websocket": "^11.2.0",
     "@universe/server-shared": "workspace:*",
     "commander": "^14.0.3",
     "dotenv": "catalog:",

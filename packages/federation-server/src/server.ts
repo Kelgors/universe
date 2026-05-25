@@ -1,15 +1,16 @@
 import type { Configuration } from "@universe/server-shared";
-import type { FastifyInstance, FastifyRequest } from "fastify";
+import { type FastifyRequest, fastify } from "fastify";
 import { errorHandler } from "./errors/handler.js";
 import { prisma } from "./prisma.js";
 import routes from "./routes/federation/v1/index.js";
 
-type PluginOptions = {
-  config: Configuration;
-};
-export default async function federationPlugin(server: FastifyInstance, options: PluginOptions) {
+export async function createServer(options: { config: Configuration }) {
   const { config } = options;
   await prisma.$connect();
+
+  const server = fastify({
+    logger: true,
+  });
   server.log.info("System public key: %s", config.publicKey.export({ format: "pem", type: "spki" }).toString());
 
   server.addContentTypeParser(
