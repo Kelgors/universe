@@ -3,12 +3,13 @@ import { saveFederationEvent } from "../../../../../../src/middlewares/saveFeder
 import route from "../../../../../../src/routes/federation/v1/transfers/init.js";
 import { mockFastify } from "../../../../../mock.js";
 
-vi.mock("../../../../../../src/middlewares/parseSignedEnveloppe.js");
-vi.mock("../../../../../../src/middlewares/saveFederationEvent.js");
+vi.mock(import("../../../../../../src/middlewares/parseSignedEnveloppe.js"));
+vi.mock(import("../../../../../../src/middlewares/saveFederationEvent.js"));
 
 describe("Federation Transfer Init Route", () => {
   beforeEach(() => {
     vi.mocked(saveFederationEvent).mockReturnValue("saveFederationEventMock" as never);
+    vi.mocked(parseSignedEnveloppe).mockReturnValue("parseSignedEnveloppeMock" as never);
   });
 
   it("should have the correct schema", () => {

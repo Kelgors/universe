@@ -1,9 +1,9 @@
 import { generateKeyPair } from "node:crypto";
 import { promisify } from "node:util";
 import type { Configuration } from "@universe/server-shared";
-import type { FederationPlayerTransferCreateInput } from "@universe/server-shared/prisma";
-import { FederationPlayerTransferState } from "@universe/server-shared/prisma";
-import { type FastifyInstance, fastify } from "fastify";
+import { FederationPlayerTransferState } from "@universe/server-shared/prisma/enums.js";
+import type { FederationPlayerTransferCreateInput } from "@universe/server-shared/prisma/models.js";
+import type { FastifyInstance } from "fastify";
 
 export const NODE1_IDENTITY = await promisify(generateKeyPair)("ed25519");
 export const NODE2_IDENTITY = await promisify(generateKeyPair)("ed25519");
@@ -57,10 +57,4 @@ export function mockFederationTransfer(override?: Partial<FederationPlayerTransf
     state: FederationPlayerTransferState.APPROVED_BY_TARGET,
     ...override,
   };
-}
-
-export function createServer(config = mockNode1Config()) {
-  const server = fastify();
-  server.register(import("../src/index.js"), { config });
-  return server;
 }

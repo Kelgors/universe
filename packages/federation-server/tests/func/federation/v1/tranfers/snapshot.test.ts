@@ -6,20 +6,15 @@ import {
   TransferSnapshotRequest,
   TransferSnapshotResponse,
 } from "@universe/game-protocol/federation";
-import { FederationPlayerTransferState } from "@universe/server-shared/prisma";
+import { FederationPlayerTransferState } from "@universe/server-shared/prisma/enums.js";
 import { createSignedEnveloppe } from "../../../../../src/crypto.js";
 import { prisma } from "../../../../../src/prisma.js";
-import {
-  createServer,
-  mockFederationTransfer,
-  mockNode1Config,
-  mockNode2Config,
-  NODE2_IDENTITY,
-} from "../../../../mock.js";
+import { createServer } from "../../../../../src/server.js";
+import { mockFederationTransfer, mockNode1Config, mockNode2Config, NODE2_IDENTITY } from "../../../../mock.js";
 
 describe("Federation Transfers Snapshot", () => {
   it("should be a 400 when there is no body", async () => {
-    const server = createServer(mockNode1Config());
+    const server = await createServer(mockNode1Config());
     const response = await server.inject({
       method: "POST",
       url: "/federation/v1/transfers/snapshot",
@@ -35,7 +30,7 @@ describe("Federation Transfers Snapshot", () => {
   });
 
   it("should send status 400 when fields in body are missing", async () => {
-    const server = createServer(mockNode1Config());
+    const server = await createServer(mockNode1Config());
     const response = await server.inject({
       method: "POST",
       url: "/federation/v1/transfers/init",
@@ -53,7 +48,7 @@ describe("Federation Transfers Snapshot", () => {
   });
 
   it("should send status 400 when this is not a signed message", async () => {
-    const server = createServer(mockNode1Config());
+    const server = await createServer(mockNode1Config());
     const response = await server.inject({
       method: "POST",
       url: "/federation/v1/transfers/snapshot",
@@ -76,7 +71,7 @@ describe("Federation Transfers Snapshot", () => {
   });
 
   it("should send status 401 when nodeId is not trusted", async () => {
-    const server = createServer(mockNode1Config());
+    const server = await createServer(mockNode1Config());
     const response = await server.inject({
       method: "POST",
       url: "/federation/v1/transfers/snapshot",
@@ -97,7 +92,7 @@ describe("Federation Transfers Snapshot", () => {
   });
 
   it("should send status 401 when signature is bad", async () => {
-    const server = createServer(mockNode1Config());
+    const server = await createServer(mockNode1Config());
     const snapshotData = Buffer.from(
       MobilePlayerData.encode({
         playerId: "00000000-0000-4000-8000-000000000000",
@@ -135,7 +130,7 @@ describe("Federation Transfers Snapshot", () => {
   });
 
   it("should send status 400 when message out of time ranges", async () => {
-    const server = createServer(mockNode1Config());
+    const server = await createServer(mockNode1Config());
     const snapshotData = Buffer.from(
       MobilePlayerData.encode({
         playerId: "00000000-0000-4000-8000-000000000000",
@@ -172,7 +167,7 @@ describe("Federation Transfers Snapshot", () => {
   });
 
   it("should send status 400 when payload is not valid", async () => {
-    const server = createServer(mockNode1Config());
+    const server = await createServer(mockNode1Config());
     const response = await server.inject({
       method: "POST",
       url: "/federation/v1/transfers/snapshot",
@@ -203,7 +198,7 @@ describe("Federation Transfers Snapshot", () => {
   });
 
   it("should send status 404 when there is no transfer initiated", async () => {
-    const server = createServer(mockNode1Config());
+    const server = await createServer(mockNode1Config());
     const response = await server.inject({
       method: "POST",
       url: "/federation/v1/transfers/snapshot",
@@ -236,7 +231,7 @@ describe("Federation Transfers Snapshot", () => {
     const mockTransfer = mockFederationTransfer({ state: FederationPlayerTransferState.EXPIRED });
     const { id: transferId } = await prisma.federationPlayerTransfer.create({ data: mockTransfer });
 
-    const server = createServer(mockNode1Config());
+    const server = await createServer(mockNode1Config());
     const response = await server.inject({
       method: "POST",
       url: "/federation/v1/transfers/snapshot",
@@ -269,7 +264,7 @@ describe("Federation Transfers Snapshot", () => {
     const mockTransfer = mockFederationTransfer({ state: FederationPlayerTransferState.APPROVED_BY_TARGET });
     const { id: transferId } = await prisma.federationPlayerTransfer.create({ data: mockTransfer });
 
-    const server = createServer(mockNode1Config());
+    const server = await createServer(mockNode1Config());
     const response = await server.inject({
       method: "POST",
       url: "/federation/v1/transfers/snapshot",
@@ -319,7 +314,7 @@ describe("Federation Transfers Snapshot", () => {
       }).finish(),
     );
 
-    const server = createServer(mockNode1Config());
+    const server = await createServer(mockNode1Config());
     const response = await server.inject({
       method: "POST",
       url: "/federation/v1/transfers/snapshot",
@@ -361,7 +356,7 @@ describe("Federation Transfers Snapshot", () => {
       }).finish(),
     );
 
-    const server = createServer(mockNode1Config());
+    const server = await createServer(mockNode1Config());
     const message = TransferSnapshotRequest.encode({
       transferId,
       requestId: mockTransfer.requestId,

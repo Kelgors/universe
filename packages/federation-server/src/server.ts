@@ -4,8 +4,7 @@ import { errorHandler } from "./errors/handler.js";
 import { prisma } from "./prisma.js";
 import routes from "./routes/federation/v1/index.js";
 
-export async function createServer(options: { config: Configuration }) {
-  const { config } = options;
+export async function createServer(config: Configuration) {
   await prisma.$connect();
 
   const server = fastify({

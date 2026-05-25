@@ -1,8 +1,9 @@
-import { createServer, mockNode1Config } from "../../../mock.js";
+import { createServer } from "../../../../src/server.js";
+import { mockNode1Config } from "../../../mock.js";
 
 describe("Federation v1 Peers Route", () => {
   it("should return 200 OK with list of trusted peers", async () => {
-    const server = createServer(mockNode1Config());
+    const server = await createServer(mockNode1Config());
     const response = await server.inject({
       method: "GET",
       url: "/federation/v1/peers",
