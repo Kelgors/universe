@@ -7,7 +7,7 @@ type StartOptions = {
 };
 export async function start(options: StartOptions) {
   const config = await loadConfig(options.config ?? "configuration.json");
-  const server = await createServer({ config });
+  const server = await createServer(config);
 
   async function onExitSignal(signal: NodeJS.Signals | "exit") {
     server.log.info(`Received ${signal}, shutting down gracefully...`);

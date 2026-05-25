@@ -2,8 +2,7 @@ import type { Configuration } from "@universe/server-shared";
 import { fastify } from "fastify";
 import { prisma } from "./prisma.js";
 
-export async function createServer(options: { config: Configuration }) {
-  const { config } = options;
+export async function createServer(config: Configuration) {
   await prisma.$connect();
 
   const server = fastify({
