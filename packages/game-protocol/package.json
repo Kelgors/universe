@@ -25,11 +25,12 @@
   "devDependencies": {
     "@bufbuild/buf": "catalog:",
     "@types/node": "catalog:",
-    "typescript": "catalog:",
     "ts-proto": "catalog:",
+    "typescript": "catalog:",
     "vitest": "catalog:"
   },
   "dependencies": {
-    "@bufbuild/protobuf": "catalog:"
+    "@bufbuild/protobuf": "catalog:",
+    "zod": "catalog:"
   }
 }
