@@ -24,6 +24,7 @@
   },
   "dependencies": {
     "@fastify/websocket": "^11.2.0",
+    "@prisma/adapter-pg": "catalog:",
     "@universe/server-shared": "workspace:*",
     "commander": "^14.0.3",
     "dotenv": "catalog:",

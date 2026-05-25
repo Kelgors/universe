@@ -11,6 +11,7 @@ allowBuilds:
 catalog:
   "@bufbuild/buf": "^1.69.0"
   "@bufbuild/protobuf": "^2.12.0"
+  "@prisma/adapter-pg": "^7.8.0"
   "@types/node": "^24.12.4"
   "dotenv": "^17.4.2"
   "ts-proto": "^2.11.8"
