@@ -4,6 +4,7 @@ import { Container } from "pixi.js";
 import { useCallback, useEffect, useRef } from "react";
 import { GameTitle } from "./components/GameTitle.js";
 import * as ecs from "./ecs";
+import { attachInputBindings } from "./input/bindings.js";
 import { setupDevtools } from "./plugins/pixijs.js";
 
 export function GameCanvas() {
@@ -21,10 +22,13 @@ export function GameCanvas() {
     const container = new Container();
     app.stage.addChild(container);
 
+    const inputBindings = attachInputBindings(app, container);
+
     const onTick = () => ecs.update(ecs.world, container, app.ticker);
     app.ticker.add(onTick);
 
     cleanupRef.current = () => {
+      inputBindings.detach();
       app.ticker.remove(onTick);
       app.stage.removeChild(container);
       container.destroy();
