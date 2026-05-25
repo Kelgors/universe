@@ -1,0 +1,21 @@
+syntax = "proto3";
+
+package universe.v1;
+
+enum GameCommandType {
+  GAME_COMMAND_TYPE_UNSPECIFIED = 0;
+  GAME_COMMAND_TYPE_ALIGN_TO    = 1;
+  GAME_COMMAND_TYPE_MOVE_TO     = 2;
+}
+
+message PlayerCommand {
+  GameCommandType type    = 1;
+  string          action  = 2;
+  bytes           payload = 3;
+}
+
+message ClientSignedEnveloppe {
+  string        player_id = 1;
+  PlayerCommand message   = 3;
+  bytes         signature = 4;
+}

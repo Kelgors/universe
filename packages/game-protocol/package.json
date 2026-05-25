@@ -3,8 +3,10 @@
   "version": "1.0.0",
   "description": "Library for the game protocol, including protobuf definitions and generated code.",
   "exports": {
-    "./client": "./dist/generated/universe/game/v1/client.js",
-    "./server": "./dist/generated/universe/game/v1/server.js"
+    ".": "./dist/index.js",
+    "./client": "./dist/generated/universe/v1/client.js",
+    "./server": "./dist/generated/universe/v1/server.js",
+    "./federation": "./dist/generated/universe/v1/federation.js"
   },
   "type": "module",
   "scripts": {
