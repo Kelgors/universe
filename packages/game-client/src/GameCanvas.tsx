@@ -23,6 +23,7 @@ export function GameCanvas() {
     app.stage.addChild(container);
 
     const inputBindings = attachInputBindings(app, container);
+    inputBindings.attach();
 
     const onTick = () => ecs.update(ecs.world, container, app.ticker);
     app.ticker.add(onTick);

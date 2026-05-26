@@ -2,6 +2,7 @@ import type { Container, Application as PixiApplication } from "pixi.js";
 import { ClickType, pushClick } from "./state.js";
 
 export type InputBindings = {
+  attach: () => void;
   detach: () => void;
 };
 
@@ -15,9 +16,10 @@ export function attachInputBindings(app: PixiApplication, gameContainer: Contain
     pushClick(ClickType.DOWN, local.x, local.y);
   };
 
-  stage.on("pointerdown", onPointerDown);
-
   return {
+    attach() {
+      stage.on("pointerdown", onPointerDown);
+    },
     detach() {
       stage.off("pointerdown", onPointerDown);
     },
