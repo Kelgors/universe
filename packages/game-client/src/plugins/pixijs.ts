@@ -1,9 +1,9 @@
 import { extend } from "@pixi/react";
-import { type Application, Container, Graphics, Text } from "pixi.js";
+import { type Application, Graphics, Text } from "pixi.js";
 import { update, world } from "../ecs/index.js";
 import { attachInputBindings } from "../input/bindings.js";
 
-extend({ Container, Graphics, Text });
+extend({ Graphics, Text });
 
 export function setupDevtools(app: Application): void {
   void import("@pixi/devtools").then(({ initDevtools }) => {
@@ -18,12 +18,9 @@ export function init(app: Application): void {
     setupDevtools(app);
   }
 
-  const container = new Container();
-  app.stage.addChild(container);
-
-  const inputBindings = attachInputBindings(app, container);
+  const inputBindings = attachInputBindings(app, app.stage);
   inputBindings.attach();
 
-  const onTick = () => update(world, container, app.ticker);
+  const onTick = () => update(world, app.stage);
   app.ticker.add(onTick);
 }
