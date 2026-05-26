@@ -4,12 +4,27 @@ This project is a **decentralized 4X space game** where each player can host the
 
 ## Getting Started
 
+You should use the [devcontainer](https://code.visualstudio.com/docs/devcontainers/tutorial#_prerequisites) to ensure we have all the same environment.
+
 ```sh
+# Install dependencies
 pnpm install
-pnpm exec turbo build
-# For functional testing
+# Migrate local database
 pnpm --filter @universe/server-shared run prisma:migrate
+# Run build
+pnpm exec turbo build
+```
+
+### Other useful commands
+
+```sh
+# Running game server
+pnpm --filter @universe/game-server run dev
+# Run lint & formatting checks
+pnpm exec turbo check
+# Run tests
 pnpm --filter @universe/server-shared run test:migrate
+pnpm exec turbo test -- --passWithNoTests
 ```
 
 ## Packages
