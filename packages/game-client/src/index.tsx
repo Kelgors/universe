@@ -1,46 +1,22 @@
-import { addComponent, addEntity } from "bitecs";
-import { Assets, Sprite as PixiSprite } from "pixi.js";
+import { Application } from "@pixi/react";
 import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
-import { MoveOnClick, Sprite, Transform, world } from "./ecs/index.js";
+import { GameTitle } from "./components/GameTitle.js";
 import "./index.css";
-import "./plugins/pixijs";
-import { GameCanvas } from "./GameCanvas";
-
-const TRIANGLE_TEXTURE = "assets/triangle.png";
-
-async function setupTempEntities() {
-  const texture = await Assets.load(TRIANGLE_TEXTURE);
-
-  const eid = addEntity(world);
-  addComponent(world, eid, Transform);
-  addComponent(world, eid, Sprite);
-  addComponent(world, eid, MoveOnClick);
-  Transform.x[eid] = 100;
-  Transform.y[eid] = 100;
-  Sprite.sprite[eid] = new PixiSprite(texture);
-  Sprite.sprite[eid].anchor.set(0.5, 0.5);
-  Sprite.sprite[eid].eventMode = "none";
-
-  const eid2 = addEntity(world);
-  addComponent(world, eid2, Transform);
-  addComponent(world, eid2, Sprite);
-  Transform.x[eid2] = 200;
-  Transform.y[eid2] = 100;
-  Sprite.sprite[eid2] = new PixiSprite(texture);
-  Sprite.sprite[eid2].anchor.set(0.5, 0.5);
-  Sprite.sprite[eid2].eventMode = "none";
-}
-
-void setupTempEntities();
+import { handlePixiInit } from "./plugins/pixijs.js";
+import { setupTempEntities } from "./prefabs/index.js";
 
 const root = document.getElementById("root");
 if (!root) {
   throw new Error('Root element "#root" not found');
 }
 
+setupTempEntities();
+
 createRoot(root).render(
   <StrictMode>
-    <GameCanvas />
+    <Application resizeTo={window} onInit={handlePixiInit}>
+      <GameTitle />
+    </Application>
   </StrictMode>,
 );
