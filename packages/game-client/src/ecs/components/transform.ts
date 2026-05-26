@@ -1,6 +1,11 @@
+export type TransformComponent = {
+  x: number;
+  y: number;
+};
+
 export type TransformType = {
-  x: number[];
-  y: number[];
+  x: TransformComponent["x"][];
+  y: TransformComponent["y"][];
 };
 
 export const Transform: TransformType = {

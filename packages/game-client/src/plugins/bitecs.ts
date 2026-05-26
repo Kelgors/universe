@@ -1,4 +1,19 @@
 import { createWorld, type World } from "bitecs";
+import { registerObservers } from "../ecs/observers/index.js";
+import { registerPrefabs } from "../prefabs/index.js";
 
 export type GameWorld = World;
+
 export const world = createWorld();
+
+let initialized = false;
+
+export function init(): void {
+  if (initialized) {
+    return;
+  }
+  initialized = true;
+
+  registerObservers(world);
+  registerPrefabs(world);
+}

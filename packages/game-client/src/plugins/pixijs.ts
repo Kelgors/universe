@@ -11,7 +11,7 @@ export function setupDevtools(app: Application): void {
   });
 }
 
-export function handlePixiInit(app: Application): void {
+export function init(app: Application): void {
   app.ticker.maxFPS = 60;
 
   if (import.meta.env.DEV) {

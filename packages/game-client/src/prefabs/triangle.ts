@@ -1,29 +1,16 @@
-import { addComponent, addEntity, type World } from "bitecs";
-import type { Texture } from "pixi.js";
-import { Sprite as PixiSprite } from "pixi.js";
-import { MoveOnClick, Sprite, Transform } from "../ecs/index.js";
+import { addComponent, addPrefab, set, type World } from "bitecs";
+import { Sprite } from "../ecs/components/sprite.js";
+import { Transform } from "../ecs/components/transform.js";
 
-export function spawnTriangle(
-  world: World,
-  texture: Texture,
-  x: number,
-  y: number,
-  options?: { moveOnClick?: boolean },
-): number {
-  const eid = addEntity(world);
-  addComponent(world, eid, Transform);
-  addComponent(world, eid, Sprite);
-  if (options?.moveOnClick) {
-    addComponent(world, eid, MoveOnClick);
+export let TrianglePrefab = -1;
+
+export function registerTrianglePrefabs(world: World): void {
+  if (TrianglePrefab !== -1) {
+    return;
   }
-  Transform.x[eid] = x;
-  Transform.y[eid] = y;
 
-  const pixiSprite = new PixiSprite(texture);
-  pixiSprite.anchor.set(0.5, 0.5);
-  pixiSprite.eventMode = "none";
-
-  Sprite.sprite[eid] = pixiSprite;
-
-  return eid;
+  TrianglePrefab = addPrefab(world);
+  addComponent(world, TrianglePrefab, Transform);
+  addComponent(world, TrianglePrefab, Sprite);
+  addComponent(world, TrianglePrefab, set(Transform, { x: 0, y: 0 }));
 }
