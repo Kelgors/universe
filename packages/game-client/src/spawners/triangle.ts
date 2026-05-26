@@ -28,6 +28,8 @@ export function spawnTriangle(
 
   if (options?.moveOnClick) {
     addComponent(world, eid, MoveOnClick);
+    MoveOnClick.targetX[eid] = x;
+    MoveOnClick.targetY[eid] = y;
   }
 
   return eid;

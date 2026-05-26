@@ -1,5 +1,5 @@
 import { extend } from "@pixi/react";
-import { type Application, Graphics, Text } from "pixi.js";
+import { type Application, Graphics, Text, type Ticker } from "pixi.js";
 import { update, world } from "../ecs/index.js";
 import { attachInputBindings } from "../input/bindings.js";
 
@@ -21,6 +21,6 @@ export function init(app: Application): void {
   const inputBindings = attachInputBindings(app, app.stage);
   inputBindings.attach();
 
-  const onTick = () => update(world, app.stage);
+  const onTick = (ticker: Ticker) => update(world, app.stage, ticker);
   app.ticker.add(onTick);
 }
