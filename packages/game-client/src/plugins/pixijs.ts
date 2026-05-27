@@ -19,7 +19,6 @@ export function init(app: Application): void {
   }
 
   const inputBindings = attachInputBindings(app, app.stage);
-  inputBindings.attach();
 
   const onTick = () => update(world, app.stage);
   app.ticker.add(onTick);
