@@ -1,11 +1,7 @@
 import type { Container, Application as PixiApplication } from "pixi.js";
 import { ClickType, pushClick } from "./state.js";
 
-export type InputBindings = {
-  attach: () => void;
-};
-
-export function attachInputBindings(app: PixiApplication, gameContainer: Container): InputBindings {
+export function attachInputBindings(app: PixiApplication, gameContainer: Container) {
   const { stage } = app;
   stage.eventMode = "static";
   stage.hitArea = app.renderer.screen;
