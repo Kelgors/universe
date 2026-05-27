@@ -10,14 +10,8 @@ export function attachInputBindings(app: PixiApplication, gameContainer: Contain
   stage.eventMode = "static";
   stage.hitArea = app.renderer.screen;
 
-  const onPointerDown = (event: { global: { x: number; y: number } }) => {
+  stage.on("pointerdown", (event: { global: { x: number; y: number } }) => {
     const local = gameContainer.toLocal(event.global);
     pushClick(ClickType.DOWN, local.x, local.y);
-  };
-
-  return {
-    attach() {
-      stage.on("pointerdown", onPointerDown);
-    },
-  };
+  });
 }
