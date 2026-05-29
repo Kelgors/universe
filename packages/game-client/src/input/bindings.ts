@@ -1,0 +1,13 @@
+import type { Container, Application as PixiApplication } from "pixi.js";
+import { ClickType, pushClick } from "./state.js";
+
+export function attachInputBindings(app: PixiApplication, gameContainer: Container) {
+  const { stage } = app;
+  stage.eventMode = "static";
+  stage.hitArea = app.renderer.screen;
+
+  stage.on("pointerdown", (event: { global: { x: number; y: number } }) => {
+    const local = gameContainer.toLocal(event.global);
+    pushClick(ClickType.DOWN, local.x, local.y);
+  });
+}

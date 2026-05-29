@@ -7,6 +7,7 @@ export function GameTitle() {
 
   return (
     <pixiText
+      eventMode="none"
       x={Math.round(app.screen.width / 2)}
       y={10}
       anchor={{ x: 0.5, y: 0 }}
