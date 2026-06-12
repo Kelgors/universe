@@ -1,6 +1,6 @@
 import { socket } from "./index.js";
 
-type MessageType = string | ArrayBufferLike | Blob | ArrayBufferView;
+type MessageType = string | ArrayBuffer;
 
 export function sendMessage(msg: MessageType): void {
   if (!socket) {
