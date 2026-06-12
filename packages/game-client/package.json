@@ -29,6 +29,7 @@
   "dependencies": {
     "@pixi/react": "^8.0.5",
     "@universe/ecs-shared": "workspace:*",
+    "@universe/game-protocol": "workspace:*",
     "bitecs": "catalog:",
     "pixi.js": "^8.19.0",
     "protobufjs": "^8.6.4",
