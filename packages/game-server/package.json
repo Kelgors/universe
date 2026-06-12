@@ -24,6 +24,7 @@
     "vitest": "catalog:"
   },
   "dependencies": {
+    "@universe/ecs-shared": "workspace:*",
     "@fastify/websocket": "^11.2.0",
     "@prisma/adapter-pg": "catalog:",
     "@universe/server-shared": "workspace:*",
