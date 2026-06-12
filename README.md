@@ -31,6 +31,8 @@ pnpm exec turbo test -- --passWithNoTests
 
 - game-protocol: shared library with protobuf files
 - server-shared: shared library server-side (contains db schema)
+- ecs-shared: shared library client-server (contains ECS shared definitions)
 - game-server: the effective game server with the ECS and websocket handler
+- game-client: A web based game client
 - federation-server: the http server to handle exchanges between game-servers
 

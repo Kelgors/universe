@@ -1,6 +1,6 @@
+import { Transform } from "@universe/ecs-shared";
 import { addComponent, addPrefab, set, type World } from "bitecs";
 import { Sprite } from "../ecs/components/sprite.js";
-import { Transform } from "../ecs/components/transform.js";
 
 export let TrianglePrefab = -1;
 

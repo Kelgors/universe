@@ -27,8 +27,9 @@
     "vitest": "catalog:"
   },
   "dependencies": {
+    "@universe/ecs-shared": "workspace:*",
     "@pixi/react": "^8.0.5",
-    "bitecs": "^0.4.0",
+    "bitecs": "catalog:",
     "pixi.js": "^8.18.1",
     "protobufjs": "^8.4.2",
     "react": "^19.2.6",

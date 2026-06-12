@@ -1,9 +1,9 @@
+import { Transform } from "@universe/ecs-shared";
 import { addComponent, addEntity, IsA, set, type World } from "bitecs";
 import type { Texture } from "pixi.js";
 import { Sprite as PixiSprite } from "pixi.js";
 import { MoveOnClick } from "../ecs/components/moveOnClick.js";
 import { Sprite } from "../ecs/components/sprite.js";
-import { Transform } from "../ecs/components/transform.js";
 import { TrianglePrefab } from "../prefabs/triangle.js";
 
 export function spawnTriangle(
