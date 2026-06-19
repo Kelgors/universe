@@ -38,14 +38,14 @@ message HandshakeResponse {
 }
 
 message AlignToResponse {
-  int64 startedAt      = 1;
-  int64 targetRotation = 2;
+  int64 started_at      = 1;
+  int64 target_rotation = 2;
   int64 nonce          = 3;
 }
 
 message MoveToResponse {
-  int64 startedAt = 1;
-  int64 targetX   = 2;
-  int64 targetY   = 3;
-  int64 nonce     = 4;
+  int64 started_at = 1;
+  int64 target_x   = 2;
+  int64 target_y   = 3;
+  int64 nonce      = 4;
 }
