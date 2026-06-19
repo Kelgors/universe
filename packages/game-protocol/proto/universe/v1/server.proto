@@ -19,8 +19,9 @@ message ServerSnapshot {
 
 enum ServerCommandType {
   SERVER_COMMAND_TYPE_UNSPECIFIED = 0;
-  SERVER_COMMAND_TYPE_SNAPSHOT    = 1;
-  SERVER_COMMAND_TYPE_SET_VALUE   = 2;
+  SERVER_COMMAND_TYPE_HANDSHAKE   = 1;
+  SERVER_COMMAND_TYPE_SNAPSHOT    = 2;
+  SERVER_COMMAND_TYPE_SET_VALUE   = 3;
 }
 
 message ServerSignedEnveloppe {
@@ -28,4 +29,23 @@ message ServerSignedEnveloppe {
   ServerCommandType type      = 2;
   bytes             message   = 3;
   bytes             signature = 4;
+}
+
+message HandshakeResponse {
+  int64  player_id   = 1;
+  string player_name = 2;
+  int64  nonce       = 3;
+}
+
+message AlignToResponse {
+  int64 startedAt      = 1;
+  int64 targetRotation = 2;
+  int64 nonce          = 3;
+}
+
+message MoveToResponse {
+  int64 startedAt = 1;
+  int64 targetX   = 2;
+  int64 targetY   = 3;
+  int64 nonce     = 4;
 }
