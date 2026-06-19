@@ -1,22 +1,17 @@
-import { ClientSignedEnveloppe, GameCommandType } from "@universe/game-protocol/client";
+import { ClientCommandType, ClientSignedEnveloppe, CommandMoveTo } from "@universe/game-protocol/client";
 import { drainClicks } from "../../input/state.js";
 import { sendMessage } from "../../network/index.js";
-import type { GameWorld } from "../../plugins/bitecs.js";
 
-export function inputSystem(world: GameWorld): void {
+export function inputSystem(): void {
   for (const click of drainClicks()) {
-    sendMoveToCommand(world, click.x, click.y);
+    sendMoveToCommand(click.x, click.y);
   }
 }
 
-function sendMoveToCommand(world: GameWorld, x: number, y: number) {
+function sendMoveToCommand(x: number, y: number) {
   const command = ClientSignedEnveloppe.encode({
-    playerId: world.localPlayerEid.toString(),
-    message: {
-      type: GameCommandType.GAME_COMMAND_TYPE_MOVE_TO,
-      action: "MOVE_TO",
-      payload: new TextEncoder().encode(JSON.stringify({ x, y })),
-    },
+    type: ClientCommandType.CLIENT_COMMAND_TYPE_MOVE_TO,
+    message: CommandMoveTo.encode({ x, y }).finish(),
     signature: new Uint8Array(),
   }).finish();
 

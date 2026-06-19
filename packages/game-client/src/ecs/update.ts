@@ -5,7 +5,7 @@ import { networkSystem } from "./systems/network.js";
 import { renderSystem } from "./systems/render.js";
 
 export function update(world: GameWorld, container: Container) {
-  networkSystem();
-  inputSystem(world);
+  networkSystem(world);
+  inputSystem();
   renderSystem(world, container);
 }
