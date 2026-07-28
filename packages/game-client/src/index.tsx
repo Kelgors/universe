@@ -4,6 +4,7 @@ import { createRoot } from "react-dom/client";
 import { GameTitle } from "./components/GameTitle.js";
 import "./index.css";
 import type { Application as PixiApplication } from "pixi.js";
+import { connect } from "./network/index.js";
 import { init as initBitecs } from "./plugins/bitecs.js";
 import { init as initPixijs } from "./plugins/pixijs.js";
 import { setupTempEntities } from "./spawners/index.js";
@@ -17,6 +18,7 @@ const init = (app: PixiApplication): void => {
   initBitecs();
   initPixijs(app);
   setupTempEntities();
+  connect();
 };
 
 createRoot(root).render(

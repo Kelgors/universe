@@ -22,6 +22,8 @@ enum ServerCommandType {
   SERVER_COMMAND_TYPE_HANDSHAKE   = 1;
   SERVER_COMMAND_TYPE_SNAPSHOT    = 2;
   SERVER_COMMAND_TYPE_SET_VALUE   = 3;
+  SERVER_COMMAND_TYPE_ALIGN_TO    = 4;
+  SERVER_COMMAND_TYPE_MOVE_TO     = 5;
 }
 
 message ServerSignedEnveloppe {
@@ -40,7 +42,7 @@ message HandshakeResponse {
 message AlignToResponse {
   int64 started_at      = 1;
   int64 target_rotation = 2;
-  int64 nonce          = 3;
+  int64 nonce           = 3;
 }
 
 message MoveToResponse {

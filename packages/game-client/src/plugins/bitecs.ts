@@ -1,10 +1,14 @@
-import { createWorld, type World as GameWorld } from "bitecs";
+import { createWorld, type World } from "bitecs";
 import { registerObservers } from "../ecs/observers/index.js";
 import { registerPrefabs } from "../prefabs/index.js";
 
-export type { GameWorld };
+interface WorldConfig {
+  localPlayerEid: number;
+}
 
-export const world = createWorld();
+export type GameWorld = World<WorldConfig>;
+
+export const world = createWorld({ localPlayerEid: -1 });
 
 let initialized = false;
 
